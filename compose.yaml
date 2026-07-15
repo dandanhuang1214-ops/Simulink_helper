@@ -1,0 +1,113 @@
+name: simulink-assistant
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        PIP_INDEX_URL: ${PIP_INDEX_URL:-https://pypi.tuna.tsinghua.edu.cn/simple}
+    image: simulink-assistant-api:dev
+    container_name: simulink-assistant-api
+    restart: unless-stopped
+    ports:
+      - "${API_PORT:-18080}:8000"
+    environment:
+      OLLAMA_BASE_URL: http://ollama:11434
+      QDRANT_URL: http://qdrant:6333
+      DATABASE_URL: sqlite:////app/data/app.db
+      CHAT_MODEL: ${CHAT_MODEL:-qwen3.5:2b}
+      EMBEDDING_MODEL: ${EMBEDDING_MODEL:-qwen3-embedding:0.6b}
+      EMBEDDING_DIMENSION: ${EMBEDDING_DIMENSION:-1024}
+      QDRANT_COLLECTION: ${QDRANT_COLLECTION:-simulink_documents}
+      OLLAMA_THINK: ${OLLAMA_THINK:-false}
+      KNOWLEDGE_ROOT: /app/knowledge
+    depends_on:
+      ollama:
+        condition: service_started
+      qdrant:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health/live')"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    volumes:
+      - api_data:/app/data
+      - ./knowledge:/app/knowledge
+    networks:
+      - backend
+
+  worker:
+    image: simulink-assistant-api:dev
+    container_name: simulink-assistant-worker
+    restart: unless-stopped
+    command: ["python", "-m", "app.worker"]
+    environment:
+      OLLAMA_BASE_URL: http://ollama:11434
+      QDRANT_URL: http://qdrant:6333
+      DATABASE_URL: sqlite:////app/data/app.db
+      CHAT_MODEL: ${CHAT_MODEL:-qwen3.5:2b}
+      EMBEDDING_MODEL: ${EMBEDDING_MODEL:-qwen3-embedding:0.6b}
+      EMBEDDING_DIMENSION: ${EMBEDDING_DIMENSION:-1024}
+      QDRANT_COLLECTION: ${QDRANT_COLLECTION:-simulink_documents}
+      OLLAMA_THINK: ${OLLAMA_THINK:-false}
+      KNOWLEDGE_ROOT: /app/knowledge
+    depends_on:
+      ollama:
+        condition: service_started
+      qdrant:
+        condition: service_healthy
+    volumes:
+      - api_data:/app/data
+      - ./knowledge:/app/knowledge
+    networks:
+      - backend
+
+  web:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: http://localhost:${API_PORT:-18080}
+    image: simulink-assistant-web:dev
+    container_name: simulink-assistant-web
+    restart: unless-stopped
+    ports:
+      - "${WEB_PORT:-13000}:3000"
+    depends_on:
+      api:
+        condition: service_healthy
+    networks:
+      - backend
+
+  ollama:
+    image: ollama/ollama:latest
+    container_name: simulink-assistant-ollama
+    restart: unless-stopped
+    volumes:
+      - ollama_models:/root/.ollama
+    networks:
+      - backend
+
+  qdrant:
+    image: qdrant/qdrant:latest
+    container_name: simulink-assistant-qdrant
+    restart: unless-stopped
+    volumes:
+      - qdrant_data:/qdrant/storage
+    healthcheck:
+      test: ["CMD", "bash", "-c", "echo > /dev/tcp/127.0.0.1/6333"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    networks:
+      - backend
+
+networks:
+  backend:
+
+volumes:
+  api_data:
+  ollama_models:
+  qdrant_data:
