@@ -1,4 +1,4 @@
-# Simulink Assistant
+# Simulink_helper
 
 面向 Simulink 资料的本地私有 LLM-Wiki。使用 FastAPI、Next.js、SQLite、Qdrant、Ollama 和 Docker Compose。
 
