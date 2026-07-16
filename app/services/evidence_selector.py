@@ -138,6 +138,10 @@ def select_evidence(
     duplicate chunks, source diversity, domain coverage, and graph-only risk.
     """
     query_domains = set(preferred_domains(question))
+    lowered_question = question.lower()
+    primary_domains = set(query_domains)
+    if "autosar" in query_domains and ("arxml" in lowered_question or "autosar" in lowered_question):
+        primary_domains = {"autosar"}
     role = question_role(question, query_domains)
     rejected: list[dict] = []
     eligible: list[dict] = []
@@ -162,14 +166,14 @@ def select_evidence(
         1 for item in eligible
         if query_domains and set(item.get("document_domains") or []) & query_domains
     )
-    document_quota = final_limit if len(query_domains) <= 1 else max(2, final_limit // 2)
+    document_quota = final_limit if len(primary_domains) <= 1 else max(2, final_limit // 2)
 
     def try_add(item: dict, *, force: bool = False) -> bool:
         if len(selected) >= final_limit:
             return False
         document_id = int(item.get("document_id") or 0)
         item_domains = set(item.get("document_domains") or [])
-        off_domain = bool(query_domains and (not item_domains or not (item_domains & query_domains)))
+        off_domain = bool(primary_domains and (not item_domains or not (item_domains & primary_domains)))
         if off_domain and domain_matched_count >= min(4, final_limit) and len(selected) >= min(4, final_limit):
             rejected.append({"chunk_id": item.get("chunk_id"), "reason": "off_domain_after_enough_core", "candidate_rank": item.get("candidate_rank")})
             return False
@@ -187,8 +191,8 @@ def select_evidence(
 
     # Multi-domain questions should get at least one piece of evidence from
     # each strongly matched document domain when available.
-    if len(query_domains) >= 2:
-        for domain in sorted(query_domains):
+    if len(primary_domains) >= 2:
+        for domain in sorted(primary_domains):
             domain_item = next(
                 (item for item in eligible if domain in set(item.get("document_domains") or []) and item not in selected),
                 None,
@@ -201,7 +205,7 @@ def select_evidence(
                     item for item in eligible
                     if item not in selected
                     and item.get("evidence_role") == "relationship"
-                    and set(item.get("document_domains") or []) & query_domains
+                    and set(item.get("document_domains") or []) & primary_domains
                 ),
                 None,
             )
@@ -243,6 +247,7 @@ def select_evidence(
             "selected_count": len(selected),
             "question_role": role,
             "query_domains": sorted(query_domains),
+            "primary_domains": sorted(primary_domains),
             "selected_domains": sorted(selected_domains),
             "selected": [
                 {

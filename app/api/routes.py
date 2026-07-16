@@ -20,6 +20,7 @@ from app.services.conversations import (
 )
 from app.services.coverage import assess_evidence_coverage, insufficient_coverage_answer
 from app.services.evidence_selector import select_evidence
+from app.services.evidence_snippets import answer_generation_budget
 from app.services.graph import compile_knowledge_graph
 from app.services.ollama import OllamaClient
 from app.services.qa import (
@@ -30,7 +31,6 @@ from app.services.qa import (
     judge_answer,
 )
 from app.services.retrieval import hybrid_search
-from app.services.retrieval import _is_simple_relation_query
 from app.services.storage import ensure_storage, raw_path, sha256_bytes, write_immutable
 from app.services.wiki import publish_page, wiki_graph
 
@@ -403,11 +403,12 @@ async def conversation_message_stream(conversation_id: int, request: Conversatio
                 yield _sse("done", {})
                 return
 
-            prompt, context = build_answer_prompt(request.content, evidence, history, active_memories())
+            prompt, context = build_answer_prompt(request.content, evidence, history, active_memories(), trace=trace)
             yield _sse("stage.started", {"stage": "generation", "label": "正在生成证据式回答"})
             answer_parts: list[str] = []
             generation_started = perf_counter()
-            generation_tokens = 500 if _is_simple_relation_query(request.content) else 900
+            generation_tokens = answer_generation_budget(request.content)
+            trace["generation_budget"] = generation_tokens
             async for token in OllamaClient().generate_stream(prompt, num_predict=generation_tokens):
                 answer_parts.append(token)
                 yield _sse("answer.delta", {"message_id": assistant_id, "delta": token})

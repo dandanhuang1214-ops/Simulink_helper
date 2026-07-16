@@ -7,8 +7,13 @@ from app.config import get_settings
 from app.database import Evaluation, SessionLocal
 from app.services.coverage import assess_evidence_coverage, insufficient_coverage_answer
 from app.services.evidence_selector import select_evidence
+from app.services.evidence_snippets import (
+    answer_generation_budget,
+    build_compact_context,
+    role_answer_contract,
+)
 from app.services.ollama import OllamaClient
-from app.services.retrieval import _is_simple_relation_query, hybrid_search
+from app.services.retrieval import hybrid_search
 
 
 DOMAIN_TERMS = [
@@ -73,7 +78,26 @@ def citation_dicts(answer: str, evidence: list[dict]) -> list[dict]:
     ]
 
 
+def _drop_uncited_extra_paragraphs(answer: str) -> str:
+    if not re.search(r"\[E:\d+\]", answer):
+        return answer
+    paragraphs = [part.strip() for part in re.split(r"\n\s*\n", answer.strip()) if part.strip()]
+    if len(paragraphs) <= 1:
+        return answer
+    kept: list[str] = []
+    for paragraph in paragraphs:
+        if re.search(r"\[E:\d+\]", paragraph):
+            kept.append(paragraph)
+            continue
+        # Keep compact Chinese section headings, but drop copied evidence tails
+        # or uncited factual paragraphs.
+        if len(paragraph) <= 24 and not re.search(r"[.!?。！？]", paragraph):
+            kept.append(paragraph)
+    return "\n\n".join(kept) if kept else answer
+
+
 def ensure_evidence_citations(answer: str, evidence: list[dict], fallback_count: int = 3) -> tuple[str, list[dict]]:
+    answer = _drop_uncited_extra_paragraphs(answer)
     citations = citation_dicts(answer, evidence)
     if citations or not evidence:
         return answer, citations
@@ -187,21 +211,10 @@ async def answer_question(question: str) -> dict:
         evaluation = {"passed": False, "reason": "coverage_failed", **trace["coverage"]}
         return {"answer": answer, "citations": [], "evaluation": evaluation, "evidence": evidence}
 
-    context = "\n\n".join(
-        f"[E:{item['chunk_id']}] 来源={item['title']} 页码={item['page'] or '未知'}\n{item['content']}"
-        for item in evidence
-    )
     ollama = OllamaClient()
-    answer_prompt = f"""仅依据证据回答问题。
-硬性规则：
-1. 每一句事实性结论末尾都必须带 [E:数字] 引用。
-2. 不允许输出没有引用的技术事实。
-3. 证据不足要明确说明；不要虚构。
-4. 回答要简洁，优先使用最相关的 2-4 个证据。
-问题：{question}
-证据：
-{context}"""
-    generation_tokens = 500 if _is_simple_relation_query(question) else 900
+    answer_prompt, context = build_answer_prompt(question, evidence, [], [], trace=trace)
+    generation_tokens = answer_generation_budget(question)
+    trace["generation_budget"] = generation_tokens
     answer = await ollama.generate(answer_prompt, num_predict=generation_tokens)
     evaluation = await _judge(question, answer, context)
     scores = [
@@ -235,20 +248,26 @@ async def answer_question(question: str) -> dict:
     return {"answer": answer, "citations": citations, "evaluation": evaluation, "evidence": evidence}
 
 
-def build_answer_prompt(question: str, evidence: list[dict], history: list[dict], memories: list[str]) -> tuple[str, str]:
-    context = "\n\n".join(
-        f"[E:{item['chunk_id']}] 来源={item['title']} 页码={item['page'] or '未知'}\n{item['content']}"
-        for item in evidence
-    )
+def build_answer_prompt(
+    question: str,
+    evidence: list[dict],
+    history: list[dict],
+    memories: list[str],
+    trace: dict | None = None,
+) -> tuple[str, str]:
+    context, _compact_items, role = build_compact_context(question, evidence, trace=trace)
     history_text = "\n".join(f"{item['role']}: {item['content']}" for item in history[-12:]) or "无"
     memory_text = "\n".join(f"- {item}" for item in memories) or "无"
-    prompt = f"""你是本地 Simulink 知识助手。只依据证据回答技术事实。
-规则：
-1. 每一句事实性结论末尾都必须带 [E:数字] 引用。
-2. 不允许输出没有引用的技术事实。
+    contract = role_answer_contract(role)
+    prompt = f"""你是本地 Simulink / AUTOSAR / Stateflow 知识助手。用户用中文提问时，除英文技术名词、函数名和产品名外，必须用中文回答。
+硬性规则：
+1. 技术事实只能来自下面的证据。
+2. 每一句事实性结论末尾都必须带 [E:数字] 引用。
 3. 证据不足时直接说明，不要编造。
-4. 默认用中文，技术名词可保留英文。
-5. 不要把目录、页眉页脚、版权页当成主要事实依据。
+4. 不要把目录、页眉页脚、版权页当成主要事实依据。
+5. {contract}
+6. 不要输出英文段落标题，例如 Core Relationship、Mapping/Integration；中文问题请使用中文标题或不要使用标题。
+7. 不要复制证据原文作为答案尾巴；只输出你整理后的最终回答。
 
 用户偏好与项目上下文（不是技术证据）：
 {memory_text}

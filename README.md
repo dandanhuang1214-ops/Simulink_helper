@@ -10,16 +10,26 @@
 
 ## 启动
 
+如果本机有 NVIDIA GPU，推荐始终使用 GPU 叠加文件启动。否则 Ollama 可能会在 CPU 上运行，回答会从几秒变成一两分钟。
+
 ```powershell
 docker compose config
 docker compose build api
-docker compose up -d
+docker compose -f compose.yaml -f compose.gpu.yaml up -d
 ```
 
-默认先使用 CPU 模式，确保整套服务可启动。确认 Docker GPU 支持正常后，使用：
+启动后确认 Ollama 是否真的使用 GPU：
 
 ```powershell
-docker compose -f compose.yaml -f compose.gpu.yaml up -d
+docker compose -f compose.yaml -f compose.gpu.yaml exec ollama ollama ps
+```
+
+其中 `PROCESSOR` 应显示 `100% GPU`。如果显示 `100% CPU`，通常表示启动时没有叠加 `compose.gpu.yaml`，请用上面的 GPU 命令重建 Ollama。
+
+只有在没有 NVIDIA GPU 或 GPU Docker 支持暂时不可用时，才使用 CPU 模式：
+
+```powershell
+docker compose up -d
 ```
 
 默认使用清华 PyPI 镜像下载 Python 依赖；如需切回官方源，可修改 `.env` 中的 `PIP_INDEX_URL`。
@@ -68,5 +78,5 @@ Web 工作台：http://localhost:13000
 停止服务时不要添加 `-v`，否则会删除模型和向量数据：
 
 ```powershell
-docker compose down
+docker compose -f compose.yaml -f compose.gpu.yaml down
 ```

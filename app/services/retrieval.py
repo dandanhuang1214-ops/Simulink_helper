@@ -60,18 +60,30 @@ def _is_simple_relation_query(query: str) -> bool:
     return simple_relation and not procedural_or_compare
 
 
-def _can_skip_dense(query: str, scores: dict[int, float], limit: int) -> bool:
+def _dense_skip_reason(query: str, scores: dict[int, float], limit: int) -> str | None:
     lowered = query.lower()
-    if not _is_simple_relation_query(query) or len(scores) < limit:
-        return False
-    # Stateflow definition questions need dense retrieval; pure BM25 can pull
-    # generic AUTOSAR "What You Will Learn" pages.
-    if "stateflow" in lowered or "状态机" in lowered:
-        return False
+    has_distinctive_term = any(term in lowered for term in (
+        "autosar", "arxml", "stateflow", "simulink", "solver", "fixed-step", "variable-step",
+        "求解器", "固定步长", "可变步长", "状态机",
+    ))
+    if not has_distinctive_term:
+        return None
+    solver_like = any(term in lowered for term in ("solver", "fixed-step", "variable-step", "求解器", "固定步长", "可变步长"))
+    minimum_lexical_hits = 4 if solver_like else min(8, limit)
+    if len(scores) < minimum_lexical_hits:
+        return None
     # AUTOSAR terms are distinctive enough for the lexical fast path.
     if "autosar" in lowered or "arxml" in lowered:
-        return True
-    return False
+        return "skip:dense_fast_path_autosar"
+    if _is_simple_relation_query(query):
+        return "skip:dense_fast_path_simple_domain"
+    if solver_like:
+        return "skip:dense_fast_path_solver"
+    return None
+
+
+def _can_skip_dense(query: str, scores: dict[int, float], limit: int) -> bool:
+    return _dense_skip_reason(query, scores, limit) is not None
 
 
 def _is_likely_toc_chunk(content: str, heading_path: str, page: int | None) -> bool:
@@ -316,7 +328,8 @@ async def hybrid_search(
         if wiki_result.get("pages") or wiki_result.get("evidence_count"):
             wiki_trace.append({"query": variant, **wiki_result})
 
-    dense_skipped = _can_skip_dense(query, scores, limit)
+    dense_skip_reason = _dense_skip_reason(query, scores, limit) if settings.dense_fast_path_enabled else None
+    dense_skipped = dense_skip_reason is not None
     if not dense_skipped:
         dense_started = perf_counter()
         vectors = await ollama.embed(queries)
@@ -372,6 +385,7 @@ async def hybrid_search(
                 "graph_ms": graph_ms,
                 "graph": graph_trace,
                 "dense_skipped": dense_skipped,
+                "dense_skip_reason": dense_skip_reason or "use:dense_required",
                 "rerank_ms": 0,
                 "rerank_used": False,
                 "rerank_reason": "skip:no_candidates",
@@ -421,8 +435,10 @@ async def hybrid_search(
     rerank_started = perf_counter()
     rerank_used = False
     rerank_reason = "disabled"
-    if use_rerank:
+    if use_rerank and settings.llm_rerank_enabled:
         rerank_used, rerank_reason = _should_rerank(query, candidates, limit)
+    elif use_rerank and not settings.llm_rerank_enabled:
+        rerank_reason = "skip:llm_rerank_disabled"
     if rerank_used:
         listing = "\n".join(f"ID={c['chunk_id']} {c['title']} {c['content'][:500]}" for c in candidates[:12])
         data = await ollama.generate_json(
@@ -444,6 +460,7 @@ async def hybrid_search(
             "graph_ms": graph_ms,
             "graph": graph_trace,
             "dense_skipped": dense_skipped,
+            "dense_skip_reason": dense_skip_reason or "use:dense_required",
             "rerank_ms": round((perf_counter() - rerank_started) * 1000),
             "rerank_used": rerank_used,
             "rerank_reason": rerank_reason,
