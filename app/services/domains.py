@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass
 
 
@@ -59,6 +60,18 @@ def normalize_text(value: str) -> str:
     return value.lower()
 
 
+def _keyword_in_text(keyword: str, lowered: str) -> bool:
+    normalized = keyword.lower()
+    if re.fullmatch(r"[a-z0-9_./:+ -]+", normalized):
+        # ASCII technical terms must match token boundaries. Plain substring
+        # matching incorrectly classifies "model" as the solver term "ode".
+        return bool(re.search(
+            rf"(?<![a-z0-9]){re.escape(normalized)}(?![a-z0-9])",
+            lowered,
+        ))
+    return normalized in lowered
+
+
 def preferred_domains(query: str) -> set[str]:
     """Return all knowledge domains mentioned by the user query.
 
@@ -68,7 +81,7 @@ def preferred_domains(query: str) -> set[str]:
     lowered = normalize_text(query)
     domains: set[str] = set()
     for domain, spec in DOMAIN_REGISTRY.items():
-        if any(keyword in lowered for keyword in spec.keywords):
+        if any(_keyword_in_text(keyword, lowered) for keyword in spec.keywords):
             domains.add(domain)
     return domains
 
@@ -77,7 +90,7 @@ def document_domains(title: str) -> set[str]:
     lowered = normalize_text(title)
     domains: set[str] = set()
     for domain, spec in DOMAIN_REGISTRY.items():
-        if any(keyword in lowered for keyword in spec.title_keywords):
+        if any(_keyword_in_text(keyword, lowered) for keyword in spec.title_keywords):
             domains.add(domain)
     return domains
 

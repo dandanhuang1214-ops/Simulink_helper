@@ -18,8 +18,7 @@ from app.schemas import (
 from app.services.conversations import (
     active_memories, conversation_dict, extract_safe_memories, message_dict, recent_context, touch_conversation,
 )
-from app.services.coverage import assess_evidence_coverage, insufficient_coverage_answer
-from app.services.evidence_selector import select_evidence
+from app.services.coverage import insufficient_coverage_answer
 from app.services.evidence_snippets import answer_generation_budget
 from app.services.graph import compile_knowledge_graph
 from app.services.ollama import OllamaClient
@@ -31,6 +30,7 @@ from app.services.qa import (
     judge_answer,
 )
 from app.services.retrieval import hybrid_search
+from app.services.retrieval_pipeline import retrieve_evidence_with_coverage
 from app.services.storage import ensure_storage, raw_path, sha256_bytes, write_immutable
 from app.services.wiki import publish_page, wiki_graph
 
@@ -349,12 +349,12 @@ async def conversation_message_stream(conversation_id: int, request: Conversatio
         try:
             yield _sse("stage.started", {"stage": "retrieval", "label": "正在检索知识库"})
             retrieval_started = perf_counter()
-            settings = get_settings()
-            candidates = await hybrid_search(
-                request.content, limit=settings.evidence_candidate_k, use_rewrite=use_rewrite, use_rerank=True,
+            retrieval = await retrieve_evidence_with_coverage(
+                request.content, use_rewrite=use_rewrite, use_rerank=True,
                 document_ids=source_filter.get("document_ids"), releases=source_filter.get("releases"), trace=trace,
             )
-            evidence = select_evidence(request.content, candidates, final_limit=settings.evidence_final_k, trace=trace)
+            candidates = retrieval.candidates
+            evidence = retrieval.evidence
             yield _sse("stage.completed", {
                 "stage": "retrieval", "elapsed_ms": round((perf_counter() - retrieval_started) * 1000),
                 "candidate_count": len(candidates), "selected_count": len(evidence), "trace": trace,
@@ -376,7 +376,7 @@ async def conversation_message_stream(conversation_id: int, request: Conversatio
                 yield _sse("done", {})
                 return
 
-            coverage = assess_evidence_coverage(request.content, evidence)
+            coverage = retrieval.coverage
             trace["coverage"] = {
                 "passed": coverage.passed,
                 "required_terms": coverage.required_terms,

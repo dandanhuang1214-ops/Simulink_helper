@@ -22,17 +22,23 @@ RELATION_EVIDENCE_CUES = (
     "component", "arxml", "runnable", "port", "signal", "subsystem", "model reference",
     "关系", "关联", "联系", "连接", "集成", "映射", "导入", "导出", "接口", "交互", "组成", "组件", "端口", "信号",
 )
+PROCEDURE_EVIDENCE_CUES = (
+    "how to", "steps", "workflow", "process", "procedure", "import", "export", "configure",
+    "create", "update", "generate", "link", "open", "select", "click", "call",
+    "createcomponentasmodel", "createcompositionasmodel", "updateautosarproperties", "updatemodel",
+    "导入", "导出", "配置", "创建", "更新", "生成", "链接", "打开", "选择", "调用", "步骤", "流程",
+)
 
 
 def question_role(question: str, query_domains: set[str] | None = None) -> str:
     lowered = question.lower()
     domains = query_domains if query_domains is not None else preferred_domains(question)
-    if len(domains) >= 2 and any(cue in lowered for cue in RELATION_QUERY_CUES):
-        return "relationship"
     if any(cue in lowered for cue in COMPARISON_QUERY_CUES):
         return "comparison"
     if any(cue in lowered for cue in PROCEDURE_QUERY_CUES):
         return "procedure"
+    if len(domains) >= 2 and any(cue in lowered for cue in RELATION_QUERY_CUES):
+        return "relationship"
     if any(cue in lowered for cue in DEFINITION_QUERY_CUES):
         return "definition"
     return "general"
@@ -44,12 +50,44 @@ def _relation_evidence_score(item: dict) -> float:
     return min(0.045, hits * 0.009)
 
 
+def _procedure_evidence_score(item: dict) -> float:
+    text = f"{item.get('title') or ''} {item.get('heading_path') or ''} {item.get('content') or ''}".lower()
+    hits = sum(1 for cue in PROCEDURE_EVIDENCE_CUES if cue in text)
+    return min(0.050, hits * 0.010)
+
+
+def _heading_overlap_score(question: str, item: dict, role: str) -> float:
+    heading = f"{item.get('title') or ''} {item.get('heading_path') or ''}".lower()
+    if not heading:
+        return 0.0
+    question_tokens = {
+        token for token in lexical_tokens(question)
+        if len(token) >= 3 and re.fullmatch(r"[a-z0-9_.:+/-]+", token)
+    }
+    heading_tokens = set(lexical_tokens(heading))
+    overlap = len(question_tokens & heading_tokens)
+    score = min(0.040, overlap * 0.010)
+    if role == "procedure":
+        lowered_question = question.lower()
+        if "import" in heading and any(cue in lowered_question for cue in ("import", "导入", "如何", "怎么")):
+            score += 0.030
+        if "export" in heading and any(cue in lowered_question for cue in ("export", "导出")):
+            score += 0.020
+        if "configure" in heading and any(cue in lowered_question for cue in ("configure", "配置")):
+            score += 0.020
+        if "generate" in heading and any(cue in lowered_question for cue in ("generate", "生成")):
+            score += 0.020
+    return min(0.080, score)
+
+
 def _is_noise_candidate(item: dict) -> tuple[bool, str | None]:
     content = (item.get("content") or "").strip()
     heading = (item.get("heading_path") or "").strip().lower()
     lowered = content.lower()
     if len(content) < 24:
         return True, "too_short"
+    if "related links" in lowered and len(content) < 420:
+        return True, "reference_only"
     if not heading and lowered.startswith("contents "):
         return True, "table_of_contents"
     if content.count(". . .") >= 3:
@@ -121,6 +159,9 @@ def _selector_score(question: str, item: dict, query_domains: set[str], role: st
             score += 0.010
     if role == "relationship":
         score += _relation_evidence_score(item)
+    if role == "procedure":
+        score += _procedure_evidence_score(item)
+    score += _heading_overlap_score(question, item, role)
     return round(score, 6)
 
 
@@ -153,7 +194,12 @@ def select_evidence(
         if noise:
             rejected.append({"chunk_id": copied.get("chunk_id"), "reason": reason, "candidate_rank": index + 1})
             continue
-        copied["evidence_role"] = "relationship" if _relation_evidence_score(copied) > 0 else "general"
+        if _procedure_evidence_score(copied) > 0:
+            copied["evidence_role"] = "procedure"
+        elif _relation_evidence_score(copied) > 0:
+            copied["evidence_role"] = "relationship"
+        else:
+            copied["evidence_role"] = "general"
         copied["selector_score"] = _selector_score(question, copied, query_domains, role)
         eligible.append(copied)
 

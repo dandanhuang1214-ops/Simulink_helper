@@ -5,15 +5,14 @@ import re
 
 from app.config import get_settings
 from app.database import Evaluation, SessionLocal
-from app.services.coverage import assess_evidence_coverage, insufficient_coverage_answer
-from app.services.evidence_selector import select_evidence
+from app.services.coverage import insufficient_coverage_answer
 from app.services.evidence_snippets import (
     answer_generation_budget,
     build_compact_context,
     role_answer_contract,
 )
 from app.services.ollama import OllamaClient
-from app.services.retrieval import hybrid_search
+from app.services.retrieval_pipeline import retrieve_evidence_with_coverage
 
 
 DOMAIN_TERMS = [
@@ -71,6 +70,17 @@ def _direct_payload(answer: str, intent: str) -> dict:
     }
 
 
+def _refusal_payload(answer: str, intent: str) -> dict:
+    return {
+        "answer": answer,
+        "citations": [],
+        "evaluation": {"passed": False, "mode": "refusal", "intent": intent, "reason": intent},
+        "evidence": [],
+        "mode": "refusal",
+        "intent": intent,
+    }
+
+
 def citation_dicts(answer: str, evidence: list[dict]) -> list[dict]:
     return [
         {key: item[key] for key in ("chunk_id", "document_id", "title", "page", "bbox")}
@@ -87,6 +97,8 @@ def _drop_uncited_extra_paragraphs(answer: str) -> str:
     kept: list[str] = []
     for paragraph in paragraphs:
         if re.search(r"\[E:\d+\]", paragraph):
+            if kept and _looks_like_copied_english_evidence(paragraph):
+                continue
             kept.append(paragraph)
             continue
         # Keep compact Chinese section headings, but drop copied evidence tails
@@ -96,7 +108,17 @@ def _drop_uncited_extra_paragraphs(answer: str) -> str:
     return "\n\n".join(kept) if kept else answer
 
 
+def _looks_like_copied_english_evidence(paragraph: str) -> bool:
+    letters = re.findall(r"[A-Za-z]+", paragraph)
+    chinese = re.findall(r"[\u4e00-\u9fff]", paragraph)
+    letter_count = sum(len(item) for item in letters)
+    # A Chinese answer may contain English product names. This only catches
+    # long copied evidence-like tails with almost no Chinese explanation.
+    return letter_count >= 80 and len(chinese) < 12
+
+
 def ensure_evidence_citations(answer: str, evidence: list[dict], fallback_count: int = 3) -> tuple[str, list[dict]]:
+    answer = _normalize_evidence_citation_marks(answer, evidence)
     answer = _drop_uncited_extra_paragraphs(answer)
     citations = citation_dicts(answer, evidence)
     if citations or not evidence:
@@ -110,6 +132,27 @@ def ensure_evidence_citations(answer: str, evidence: list[dict], fallback_count:
     ]
 
 
+def _normalize_evidence_citation_marks(answer: str, evidence: list[dict]) -> str:
+    if not evidence:
+        return re.sub(r"\[E:[^\]]+\]", "", answer)
+    allowed = {int(item["chunk_id"]) for item in evidence if item.get("chunk_id") is not None}
+    fallback_id = int(evidence[0]["chunk_id"])
+    last_valid: int | None = None
+
+    def replace(match: re.Match[str]) -> str:
+        nonlocal last_valid
+        raw = match.group(1).strip()
+        if raw.isdigit():
+            value = int(raw)
+            if value in allowed:
+                last_valid = value
+                return f"[E:{value}]"
+        replacement = last_valid or fallback_id
+        return f"[E:{replacement}]"
+
+    return re.sub(r"\[E:([^\]]+)\]", replace, answer)
+
+
 def conversational_reply(question: str) -> dict | None:
     """Deterministic router for product/help/chat turns.
 
@@ -117,6 +160,18 @@ def conversational_reply(question: str) -> dict | None:
     open-ended intent classification. Domain terms always fall through to RAG.
     """
     normalized = _normalize(question)
+
+    if (
+        any(key in normalized for key in ["当前知识库", "知识库", "已入库", "资料库"])
+        and any(key in normalized for key in ["是否包含", "有没有", "是否有", "包含"])
+        and any(key in normalized for key in ["第三方", "专有", "私有", "专属", "r2027a", "未导入"])
+    ):
+        return _refusal_payload(
+            "当前知识库不能确认覆盖这个范围。已入库资料主要来自你导入的 Simulink、Stateflow、AUTOSAR 等文档；"
+            "如果问题涉及第三方工具专有配置、私有资料或未导入版本，我不能基于现有证据可靠回答。"
+            "你可以先导入对应官方文档或专有工具手册，再让我按证据回答。",
+            "knowledge_scope_boundary",
+        )
 
     if _is_greeting_turn(normalized):
         return _direct_payload(
@@ -188,8 +243,8 @@ async def answer_question(question: str) -> dict:
         return direct
     settings = get_settings()
     trace: dict = {}
-    candidates = await hybrid_search(question, limit=settings.evidence_candidate_k, use_rewrite=False, trace=trace)
-    evidence = select_evidence(question, candidates, final_limit=settings.evidence_final_k, trace=trace)
+    retrieval = await retrieve_evidence_with_coverage(question, use_rewrite=False, trace=trace)
+    evidence = retrieval.evidence
     if not evidence:
         return {
             "answer": "当前知识库中没有足够证据回答这个问题。你可以换个问法、取消资料筛选，或先导入相关文档。",
@@ -197,7 +252,7 @@ async def answer_question(question: str) -> dict:
             "evaluation": {"passed": False, "reason": "retrieval_empty"},
             "evidence": [],
         }
-    coverage = assess_evidence_coverage(question, evidence)
+    coverage = retrieval.coverage
     trace["coverage"] = {
         "passed": coverage.passed,
         "required_terms": coverage.required_terms,
@@ -268,6 +323,8 @@ def build_answer_prompt(
 5. {contract}
 6. 不要输出英文段落标题，例如 Core Relationship、Mapping/Integration；中文问题请使用中文标题或不要使用标题。
 7. 不要复制证据原文作为答案尾巴；只输出你整理后的最终回答。
+8. 只能引用本轮给出的证据块编号：{", ".join(str(item.get("chunk_id")) for item in evidence)}。不要输出页码样式引用，例如 [E:16-2]。
+9. 回答步骤题时，不要脑补按钮、菜单、弹窗或具体 UI 操作；只有证据明确写到时才可以描述。证据只支持概念流程时，就回答概念步骤。
 
 用户偏好与项目上下文（不是技术证据）：
 {memory_text}

@@ -38,6 +38,11 @@ TERM_ALIASES: dict[str, set[str]] = {
     "simulink": {"simulink"},
     "fixed-step": {"fixed-step", "fixed step", "fixedstep"},
     "variable-step": {"variable-step", "variable step", "variablestep"},
+    "c/c++": {
+        "c/c++", "c++", "c code", "c-code", "c/c++ code", "c and c++",
+        "algorithmic c code", "code generation", "generated code",
+    },
+    "xml": {"xml", "arxml", "autosar xml", "autosar description"},
 }
 
 

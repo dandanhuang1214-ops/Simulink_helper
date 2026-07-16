@@ -12,6 +12,7 @@ from app.database import Document, EvidenceChunk, SessionLocal, WikiPage
 from app.services.domains import document_domains, domain_boost, preferred_domains
 from app.services.graph_retrieval import graph_candidate_scores
 from app.services.ollama import OllamaClient
+from app.services.retrieval_policy import assess_retrieval_confidence, diversify_candidates
 from app.services.text import lexical_tokens
 
 
@@ -25,6 +26,7 @@ DOMAIN_QUERY_EXPANSIONS = [
     (("event", "事件"), "event broadcast chart execution Stateflow"),
     (("truth table", "真值表"), "truth table decision logic Stateflow"),
     (("autosar", "arxml"), "AUTOSAR component composition ARXML Simulink"),
+    (("xml", "arxml", "导入"), "Import AUTOSAR XML Descriptions Into Simulink ARXML Importer createComponentAsModel createCompositionAsModel updateModel shared descriptions"),
     (("simulink", "仿真"), "Simulink model simulation block signal subsystem"),
     (("求解器", "solver", "步长"), "solver fixed-step variable-step simulation Simulink"),
 ]
@@ -62,6 +64,13 @@ def _is_simple_relation_query(query: str) -> bool:
 
 def _dense_skip_reason(query: str, scores: dict[int, float], limit: int) -> str | None:
     lowered = query.lower()
+    technical_identifiers = re.findall(r"\b[A-Za-z_][A-Za-z0-9_]{5,}\b", query)
+    has_exact_identifier = any(
+        "_" in value or (any(char.islower() for char in value) and any(char.isupper() for char in value))
+        for value in technical_identifiers
+    )
+    if has_exact_identifier and len(scores) >= min(4, limit):
+        return "skip:dense_fast_path_exact_identifier"
     has_distinctive_term = any(term in lowered for term in (
         "autosar", "arxml", "stateflow", "simulink", "solver", "fixed-step", "variable-step",
         "求解器", "固定步长", "可变步长", "状态机",
@@ -435,28 +444,83 @@ async def hybrid_search(
         candidates = non_toc
     for item in candidates:
         doc_domain_set = set(item["document_domains"])
-        graph_only = set(item.get("channels", [])) == {"graph"}
+        channel_set = set(item.get("channels", []))
+        graph_only = channel_set == {"graph"}
         item["concept_boost"] = 0.0 if graph_only else _concept_boost(query, item)
         item["domain_boost"] = min(domain_boost(query_domains, doc_domain_set), 0.01) if graph_only else domain_boost(query_domains, doc_domain_set)
-        item["final_score"] = item["rrf_score"] + item["concept_boost"] + item["domain_boost"]
+        if graph_only:
+            item["channel_prior"] = -0.022
+        elif channel_set == {"wiki"}:
+            item["channel_prior"] = -0.006
+        elif {"bm25", "dense"}.issubset(channel_set):
+            item["channel_prior"] = 0.012
+        else:
+            item["channel_prior"] = 0.0
+        item["final_score"] = (
+            item["rrf_score"]
+            + item["concept_boost"]
+            + item["domain_boost"]
+            + item["channel_prior"]
+        )
     candidates.sort(key=lambda item: item["final_score"], reverse=True)
+    candidates, diversity_trace = diversify_candidates(candidates, limit=len(candidates))
+    decision = assess_retrieval_confidence(
+        query,
+        candidates,
+        dense_skipped=dense_skipped,
+        duplicate_ratio=float(diversity_trace.get("duplicate_ratio", 0.0)),
+    )
 
     retrieval_ms = round((perf_counter() - started) * 1000) - rewrite_ms
     rerank_started = perf_counter()
+    rerank_attempted = False
     rerank_used = False
-    rerank_reason = "disabled"
-    if use_rerank and settings.llm_rerank_enabled:
-        rerank_used, rerank_reason = _should_rerank(query, candidates, limit)
-    elif use_rerank and not settings.llm_rerank_enabled:
-        rerank_reason = "skip:llm_rerank_disabled"
+    if not use_rerank:
+        rerank_reason = "skip:request_disabled"
+    elif decision.tier < 3:
+        rerank_reason = f"skip:tier_{decision.tier}_{decision.mode}"
+    elif decision.mode != "rerank":
+        rerank_reason = f"skip:tier_3_{decision.mode}"
+    elif not settings.llm_rerank_enabled:
+        rerank_reason = "skip:tier_3_local_rerank_disabled"
+    else:
+        rerank_attempted = True
+        rerank_used = True
+        rerank_reason = "use:tier_3_low_confidence"
     if rerank_used:
-        listing = "\n".join(f"ID={c['chunk_id']} {c['title']} {c['content'][:500]}" for c in candidates[:12])
-        data = await ollama.generate_json(
-            f"按与问题的相关性重排候选，只输出 JSON：{{\"ids\":[1,2]}}。问题：{query}\n候选：\n{listing}"
+        rerank_candidates = candidates[:12]
+        allowed_ids = {int(item["chunk_id"]) for item in rerank_candidates}
+        listing = "\n".join(
+            f"ID={c['chunk_id']}\nTITLE={c['title']}\nHEADING={c.get('heading_path') or ''}\nTEXT={c['content'][:650]}"
+            for c in rerank_candidates
         )
-        preferred = [int(value) for value in data.get("ids", []) if str(value).isdigit()]
-        rank = {value: index for index, value in enumerate(preferred)}
-        candidates.sort(key=lambda item: rank.get(item["chunk_id"], 999))
+        try:
+            data = await ollama.generate_json(
+                f"按与问题的相关性重排候选，只输出 JSON：{{\"ids\":[1,2]}}。问题：{query}\n候选：\n{listing}"
+            )
+            preferred = [
+                int(value)
+                for value in data.get("ids", [])
+                if str(value).isdigit() and int(value) in allowed_ids
+            ]
+            if preferred:
+                rank = {value: index for index, value in enumerate(preferred)}
+                original_rank = {int(item["chunk_id"]): index for index, item in enumerate(candidates)}
+                candidates.sort(
+                    key=lambda item: (
+                        rank.get(
+                            int(item["chunk_id"]),
+                            len(rank) + original_rank[int(item["chunk_id"])],
+                        ),
+                        original_rank[int(item["chunk_id"])],
+                    )
+                )
+            else:
+                rerank_used = False
+                rerank_reason = "fallback:tier_3_empty_rerank"
+        except Exception as exc:
+            rerank_used = False
+            rerank_reason = f"fallback:tier_3_rerank_error:{type(exc).__name__}"
     if trace is not None:
         trace.update({
             "queries": queries,
@@ -472,7 +536,16 @@ async def hybrid_search(
             "graph": graph_trace,
             "dense_skipped": dense_skipped,
             "dense_skip_reason": dense_skip_reason or "use:dense_required",
+            "candidate_diversity": diversity_trace,
+            "retrieval_decision": {
+                "tier": decision.tier,
+                "mode": decision.mode,
+                "confidence": decision.confidence,
+                "reasons": decision.reasons,
+                "signals": decision.signals,
+            },
             "rerank_ms": round((perf_counter() - rerank_started) * 1000),
+            "rerank_attempted": rerank_attempted,
             "rerank_used": rerank_used,
             "rerank_reason": rerank_reason,
             "candidate_count": len(candidates),
@@ -483,6 +556,7 @@ async def hybrid_search(
                     "rrf_score": item["rrf_score"],
                     "concept_boost": item.get("concept_boost", 0.0),
                     "domain_boost": item.get("domain_boost", 0.0),
+                    "channel_prior": item.get("channel_prior", 0.0),
                     "document_domains": item.get("document_domains", []),
                     "channels": item["channels"],
                     "wiki_refs": item.get("wiki_refs", []),

@@ -7,12 +7,11 @@ import re
 from time import perf_counter
 
 from app.config import get_settings
-from app.services.coverage import assess_evidence_coverage, insufficient_coverage_answer
-from app.services.evidence_selector import select_evidence
+from app.services.coverage import insufficient_coverage_answer
 from app.services.evidence_snippets import answer_generation_budget
 from app.services.ollama import OllamaClient
 from app.services.qa import build_answer_prompt, ensure_evidence_citations
-from app.services.retrieval import hybrid_search
+from app.services.retrieval_pipeline import retrieve_evidence_with_coverage
 
 
 QUESTIONS = [
@@ -33,17 +32,16 @@ async def run_one(question_id: str, question: str, *, profile: str) -> dict:
     settings = get_settings()
     started = perf_counter()
     trace: dict = {}
-    candidates = await hybrid_search(
+    retrieval = await retrieve_evidence_with_coverage(
         question,
-        limit=settings.evidence_candidate_k,
         use_rewrite=False,
         use_rerank=True,
         retrieval_profile=profile,
         trace=trace,
     )
-    evidence = select_evidence(question, candidates, final_limit=settings.evidence_final_k, trace=trace)
+    evidence = retrieval.evidence
     retrieval_ms = round((perf_counter() - started) * 1000)
-    coverage = assess_evidence_coverage(question, evidence)
+    coverage = retrieval.coverage
     if not coverage.passed:
         answer = insufficient_coverage_answer(coverage)
         generation_ms = 0

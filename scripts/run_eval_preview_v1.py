@@ -9,12 +9,11 @@ from pathlib import Path
 from time import perf_counter
 
 from app.config import get_settings
-from app.services.coverage import assess_evidence_coverage, insufficient_coverage_answer
-from app.services.evidence_selector import select_evidence
+from app.services.coverage import insufficient_coverage_answer
 from app.services.evidence_snippets import answer_generation_budget
 from app.services.ollama import OllamaClient
 from app.services.qa import build_answer_prompt, conversational_reply, ensure_evidence_citations
-from app.services.retrieval import hybrid_search
+from app.services.retrieval_pipeline import retrieve_evidence_with_coverage
 
 
 QUESTION_FILE = Path("/tmp/EVAL_QUESTION_REVIEW_V1.md")
@@ -73,9 +72,10 @@ async def run_one(item: dict, *, profile: str) -> dict:
     direct = conversational_reply(question)
     if direct:
         answer = direct["answer"]
+        mode = direct.get("mode") or "direct"
         row = {
             **item,
-            "mode": "direct",
+            "mode": mode,
             "retrieval_ms": 0,
             "generation_ms": 0,
             "total_ms": round((perf_counter() - started) * 1000),
@@ -90,17 +90,16 @@ async def run_one(item: dict, *, profile: str) -> dict:
         return row
 
     trace: dict = {}
-    candidates = await hybrid_search(
+    retrieval = await retrieve_evidence_with_coverage(
         question,
-        limit=settings.evidence_candidate_k,
         use_rewrite=False,
         use_rerank=True,
         retrieval_profile=profile,
         trace=trace,
     )
-    evidence = select_evidence(question, candidates, final_limit=settings.evidence_final_k, trace=trace)
+    evidence = retrieval.evidence
     retrieval_ms = round((perf_counter() - started) * 1000)
-    coverage = assess_evidence_coverage(question, evidence)
+    coverage = retrieval.coverage
 
     if not coverage.passed:
         answer = insufficient_coverage_answer(coverage)
@@ -211,9 +210,18 @@ def _write_report(rows: list[dict], *, profile: str) -> Path:
 async def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--profile", choices=["fast", "full"], default="fast")
+    parser.add_argument("--only", default="", help="Comma-separated question IDs, for example Q010,Q011.")
     args = parser.parse_args()
+    selected_ids = {
+        value.strip().upper()
+        for value in args.only.split(",")
+        if value.strip()
+    }
     rows: list[dict] = []
-    for item in _load_questions():
+    questions = _load_questions()
+    if selected_ids:
+        questions = [item for item in questions if item["id"].upper() in selected_ids]
+    for item in questions:
         print(f"RUN {item['id']} {item['question']}", flush=True)
         row = await run_one(item, profile=args.profile)
         print(json.dumps({

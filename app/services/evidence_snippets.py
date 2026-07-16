@@ -158,5 +158,10 @@ def role_answer_contract(role: str) -> str:
     if role == "comparison":
         return "用紧凑中文对比，只写证据支持的差异点。每一句事实性结论都必须带 [E:n] 引用。"
     if role == "procedure":
-        return "最多用 4 个编号步骤或要点回答。每个步骤都必须带 [E:n] 引用。"
+        return (
+            "最多用 4 个编号步骤或要点回答。每个步骤都必须带 [E:n] 引用。"
+            "只描述证据明确支持的动作；不要把 Related Links、See Also 或章节标题脑补成完整操作。"
+            "如果证据只支持概念流程，就明确说明“现有证据只能确认概念流程/工具入口，不能确认具体 UI 步骤”。"
+            "除非证据原文明确出现 click/select/open/save 等操作，否则不要写“点击、选择、保存、系统提示、弹窗”。"
+        )
     return "最多用 4 个简洁中文要点或短段落回答。每一句事实性结论都必须带 [E:n] 引用。"

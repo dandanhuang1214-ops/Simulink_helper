@@ -6,6 +6,9 @@
 
 ```text
 run_answer_quality_acceptance.py      回答质量验收：引用、中文回答、拒答、速度
+run_eval_preview_v1.py                25题正式预评测：fast/full profile 对照
+evaluate_gold_metrics.py              用 gold labels 计算检索/引用指标
+summarize_manual_eval_labels.py       汇总人工标注表：通过率、平均分、待修复题目
 run_round3_retrieval_acceptance.py    检索链路验收：BM25/Dense/Wiki/Graph/Selector
 run_round3_generation_spotcheck.py    生成链路抽样验收
 run_round3_acceptance.py              旧版综合验收脚本，保留作参考
