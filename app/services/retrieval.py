@@ -75,10 +75,16 @@ def _dense_skip_reason(query: str, scores: dict[int, float], limit: int) -> str 
     # AUTOSAR terms are distinctive enough for the lexical fast path.
     if "autosar" in lowered or "arxml" in lowered:
         return "skip:dense_fast_path_autosar"
-    if _is_simple_relation_query(query):
-        return "skip:dense_fast_path_simple_domain"
     if solver_like:
         return "skip:dense_fast_path_solver"
+    if "stateflow" in lowered or "状态机" in lowered:
+        return "skip:dense_fast_path_stateflow"
+    if any(term in lowered for term in ("code generation", "代码生成", "生成代码", "coder", "embedded coder")):
+        return "skip:dense_fast_path_codegen"
+    if _is_simple_relation_query(query):
+        return "skip:dense_fast_path_simple_domain"
+    if "simulink" in lowered and len(scores) >= min(10, limit):
+        return "skip:dense_fast_path_simulink"
     return None
 
 
@@ -269,12 +275,14 @@ async def hybrid_search(
     limit: int = 10,
     use_rewrite: bool = True,
     use_rerank: bool = True,
+    retrieval_profile: str | None = None,
     document_ids: list[int] | None = None,
     releases: list[str] | None = None,
     trace: dict | None = None,
 ) -> list[dict]:
     started = perf_counter()
     settings = get_settings()
+    profile = (retrieval_profile or settings.retrieval_profile or "fast").lower()
     query_domains = preferred_domains(query)
     allowed_documents: set[int] | None = None
     if document_ids or releases:
@@ -328,7 +336,8 @@ async def hybrid_search(
         if wiki_result.get("pages") or wiki_result.get("evidence_count"):
             wiki_trace.append({"query": variant, **wiki_result})
 
-    dense_skip_reason = _dense_skip_reason(query, scores, limit) if settings.dense_fast_path_enabled else None
+    dense_fast_path_enabled = settings.dense_fast_path_enabled and profile == "fast"
+    dense_skip_reason = _dense_skip_reason(query, scores, limit) if dense_fast_path_enabled else None
     dense_skipped = dense_skip_reason is not None
     if not dense_skipped:
         dense_started = perf_counter()
@@ -375,6 +384,7 @@ async def hybrid_search(
         if trace is not None:
             trace.update({
                 "queries": queries,
+                "retrieval_profile": profile,
                 "preferred_domains": sorted(query_domains),
                 "rewrite_ms": rewrite_ms,
                 "retrieval_ms": round((perf_counter() - started) * 1000) - rewrite_ms,
@@ -450,6 +460,7 @@ async def hybrid_search(
     if trace is not None:
         trace.update({
             "queries": queries,
+            "retrieval_profile": profile,
             "preferred_domains": sorted(query_domains),
             "rewrite_ms": rewrite_ms,
             "retrieval_ms": max(0, retrieval_ms),
