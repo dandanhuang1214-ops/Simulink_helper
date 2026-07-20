@@ -23,7 +23,7 @@ class Settings(BaseSettings):
     dense_fast_path_enabled: bool = True
     retrieval_top_k: int = 20
     rerank_top_k: int = 6
-    llm_rerank_enabled: bool = True
+    llm_rerank_enabled: bool = False
     graph_retrieval_enabled: bool = True
     graph_retrieval_top_k: int = 24
     evidence_candidate_k: int = 18

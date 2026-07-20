@@ -56,6 +56,22 @@ def active_memories() -> list[str]:
     return [row.content for row in rows]
 
 
+def reconcile_interrupted_messages() -> int:
+    """Close messages left in-flight by an API restart.
+
+    A live request owns the only valid ``generating`` state.  After process
+    startup no previous request can still be alive, so keeping that state
+    would leave the UI spinning forever.
+    """
+    with SessionLocal() as session:
+        rows = session.query(Message).filter(Message.status == "generating").all()
+        for row in rows:
+            row.status = "interrupted"
+            row.error = row.error or "API restarted before generation completed"
+        session.commit()
+        return len(rows)
+
+
 def extract_safe_memories(message_id: int, content: str) -> list[dict]:
     """Extract a deliberately small allow-list of low-risk preferences without another LLM call."""
     candidates: list[tuple[str, str, float]] = []

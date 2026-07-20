@@ -2,13 +2,34 @@
 
 面向 Simulink 资料的本地私有 LLM-Wiki。使用 FastAPI、Next.js、SQLite、Qdrant、Ollama 和 Docker Compose。
 
-- SQLite 保存文档记录、用户、任务和对话等业务数据。
+- SQLite 保存文档记录、导入任务、会话、消息和低风险偏好记忆等业务数据。
 - Qdrant 保存文档分块向量和检索元数据。
 - Ollama 运行本地对话模型与 Embedding 模型。
 
 已验证的默认参数：Embedding 为 1024 维，Qdrant 集合为 `simulink_documents`，对话默认关闭思考模式以降低延迟。
 
 ## 启动
+
+### 一键启动（推荐）
+
+在PowerShell中运行：
+
+```powershell
+.\scripts\start-demo.ps1
+.\scripts\check-demo.ps1
+```
+
+需要同时加载并统计完整知识图谱时，运行 `.\scripts\check-demo.ps1 -Full`。
+
+脚本默认使用GPU Compose，负责检查Docker、校验Compose、构建容器、等待API就绪并检查本地模型。仅在没有可用NVIDIA GPU时使用：
+
+```powershell
+.\scripts\start-demo.ps1 -Cpu
+```
+
+如镜像已经构建完成，可以使用 `-SkipBuild` 加快再次启动。
+
+### 手动启动
 
 如果本机有 NVIDIA GPU，推荐始终使用 GPU 叠加文件启动。否则 Ollama 可能会在 CPU 上运行，回答会从几秒变成一两分钟。
 
@@ -61,6 +82,17 @@ Web 工作台：http://localhost:13000
 知识资产位于 `knowledge/`，其中 `raw` 永不由系统覆盖；`parsed`、`evidence`、`wiki`、`drafts`、`error-book` 均可重建。
 
 当前Demo支持带文本层PDF；扫描PDF的Docling/OCR/VLM解析作为下一轮可选扩展接入。
+
+## 当前Demo能力
+
+- 三栏聊天工作台、持久会话、最近6轮上下文和资料范围筛选。
+- 规则闲聊路由与本地RAG路由，支持流式回答、停止、重试和回答反馈。
+- SQLite FTS5 BM25、Qdrant Dense向量、Wiki与图谱辅助召回、证据选择和引用校验。
+- 文档、Wiki、PDF原页、证据引用和知识图谱联动。
+- 图谱支持类型过滤、搜索、缩放、拖动、一跳邻居与快速布局。
+- API重启或连接中断后自动收敛遗留生成状态，并保留已生成的部分答案。
+
+完整交付检查见 [`docs/DEMO_ACCEPTANCE.md`](docs/DEMO_ACCEPTANCE.md)。
 
 ## 入库规则 v1
 

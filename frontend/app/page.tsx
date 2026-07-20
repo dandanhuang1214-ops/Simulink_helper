@@ -2,6 +2,7 @@
 
 import cytoscape, { Core, ElementDefinition } from "cytoscape";
 import { FormEvent, KeyboardEvent, useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import ReactMarkdown from "react-markdown";
 import "./layout-fix.css";
 import SourceFilter from "./source-filter";
@@ -12,6 +13,7 @@ type Conversation = {
   id: number;
   title: string;
   pinned: boolean;
+  updated_at?: string;
   source_filter?: { document_ids?: number[]; releases?: string[] };
 };
 
@@ -24,6 +26,8 @@ type Message = {
   evaluation?: any;
   retrieval_trace?: any;
   latency_ms?: number | null;
+  error?: string | null;
+  feedback?: string | null;
 };
 
 type DocumentRow = {
@@ -131,6 +135,23 @@ function scoreText(value?: number) {
   return value.toFixed(4);
 }
 
+function NavIcon({ name }: { name: string }) {
+  const paths: Record<string, string[]> = {
+    chat: ["M4 4.5h12v8.5H9l-4 3v-3H4z"],
+    documents: ["M5 3.5h7l3 3v10H5z", "M12 3.5v3h3"],
+    knowledge: ["M3.5 4.5h5.2c1 0 1.3.6 1.3 1.2v10c0-.8-.6-1.2-1.4-1.2H3.5z", "M16.5 4.5h-5.2c-1 0-1.3.6-1.3 1.2v10c0-.8.6-1.2 1.4-1.2h5.1z"],
+    graph: ["M5 6.5 10 4l5 2.5v6L10 16l-5-3.5z", "M5 6.5l5 3 5-3", "M10 9.5V16"],
+    review: ["M4.5 4.5h11v11h-11z", "m7 11 2 2 4-5"],
+    evaluations: ["M4.5 15.5v-4", "M9 15.5v-7", "M13.5 15.5v-10", "M3 15.5h13.5"],
+    settings: ["M10 6.6a3.4 3.4 0 1 0 0 6.8 3.4 3.4 0 0 0 0-6.8", "M10 3v2M10 15v2M3 10h2M15 10h2M5 5l1.4 1.4M13.6 13.6 15 15M15 5l-1.4 1.4M6.4 13.6 5 15"],
+  };
+  return (
+    <svg className="nav-icon" viewBox="0 0 20 20" aria-hidden="true">
+      {(paths[name] || paths.chat).map((path, index) => <path d={path} key={index} />)}
+    </svg>
+  );
+}
+
 export default function Home() {
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [conversationId, setConversationId] = useState<number | null>(null);
@@ -140,14 +161,36 @@ export default function Home() {
   const [wikiPage, setWikiPage] = useState<WikiDetail | null>(null);
   const [graphData, setGraphData] = useState<GraphData>({ nodes: [], edges: [] });
   const [question, setQuestion] = useState("");
+  const [conversationQuery, setConversationQuery] = useState("");
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [conversationMenu, setConversationMenu] = useState<{ id: number; top: number; left: number } | null>(null);
+  const [editingConversationId, setEditingConversationId] = useState<number | null>(null);
+  const [editingTitle, setEditingTitle] = useState("");
+  const [deleteCandidate, setDeleteCandidate] = useState<Conversation | null>(null);
+  const [sidebarNotice, setSidebarNotice] = useState("");
+  const [copiedMessageId, setCopiedMessageId] = useState<number | null>(null);
   const [busy, setBusy] = useState(false);
+  const [stopping, setStopping] = useState(false);
+  const [showScrollToBottom, setShowScrollToBottom] = useState(false);
+  const [composerHeight, setComposerHeight] = useState(122);
   const [stage, setStage] = useState("");
   const [stageKind, setStageKind] = useState<"idle" | "connecting" | "retrieval" | "generation" | "judge" | "done" | "error">("idle");
   const [evidence, setEvidence] = useState<any[]>([]);
   const [chosen, setChosen] = useState<any>(null);
   const [view, setView] = useState("chat");
   const abort = useRef<AbortController | null>(null);
+  const activeRequestRef = useRef(0);
+  const sendLockRef = useRef(false);
+  const conversationIdRef = useRef<number | null>(null);
+  const textareaRef = useRef<HTMLTextAreaElement | null>(null);
+  const messagesRef = useRef<HTMLDivElement | null>(null);
+  const composerRef = useRef<HTMLDivElement | null>(null);
+  const autoFollowRef = useRef(true);
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    conversationIdRef.current = conversationId;
+  }, [conversationId]);
 
   async function refresh() {
     const [conversationRows, documentRows, wikiRows, graphRows] = await Promise.all([
@@ -160,7 +203,10 @@ export default function Home() {
     setDocuments(documentRows);
     setWikiPages(wikiRows);
     setGraphData(graphRows);
-    if (!conversationId && conversationRows[0]) setConversationId(conversationRows[0].id);
+    if (!conversationId && conversationRows[0]) {
+      conversationIdRef.current = conversationRows[0].id;
+      setConversationId(conversationRows[0].id);
+    }
   }
 
   async function loadConversation(id: number) {
@@ -192,23 +238,207 @@ export default function Home() {
 
   useEffect(() => {
     refresh();
+    setSidebarCollapsed(window.localStorage.getItem("simulink-wiki:sidebar-collapsed") === "1");
   }, []);
 
   useEffect(() => {
+    if (!conversationMenu) return;
+    const closeMenu = () => setConversationMenu(null);
+    document.addEventListener("pointerdown", closeMenu);
+    window.addEventListener("resize", closeMenu);
+    return () => {
+      document.removeEventListener("pointerdown", closeMenu);
+      window.removeEventListener("resize", closeMenu);
+    };
+  }, [conversationMenu]);
+
+  useEffect(() => {
+    autoFollowRef.current = true;
+    setShowScrollToBottom(false);
     if (conversationId) loadConversation(conversationId);
   }, [conversationId]);
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
-  }, [messages.length, messages[messages.length - 1]?.content, stage]);
+    if (!autoFollowRef.current) return;
+    const frame = requestAnimationFrame(() => {
+      const container = messagesRef.current;
+      if (!container) return;
+      container.scrollTo({ top: container.scrollHeight, behavior: "auto" });
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [messages.length, messages[messages.length - 1]?.content, composerHeight]);
+
+  useEffect(() => {
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+    textarea.style.height = "0px";
+    const nextHeight = Math.min(textarea.scrollHeight, 144);
+    textarea.style.height = `${Math.max(nextHeight, 44)}px`;
+    textarea.style.overflowY = textarea.scrollHeight > 144 ? "auto" : "hidden";
+  }, [question]);
+
+  useEffect(() => {
+    const composer = composerRef.current;
+    if (!composer || typeof ResizeObserver === "undefined") return;
+    const observer = new ResizeObserver(([entry]) => {
+      setComposerHeight(Math.ceil(entry.contentRect.height));
+    });
+    observer.observe(composer);
+    return () => observer.disconnect();
+  }, [view]);
+
+  function handleMessagesScroll() {
+    const container = messagesRef.current;
+    if (!container) return;
+    const distanceFromBottom = container.scrollHeight - container.scrollTop - container.clientHeight;
+    const nearBottom = distanceFromBottom <= 96;
+    autoFollowRef.current = nearBottom;
+    setShowScrollToBottom(!nearBottom && distanceFromBottom > 140);
+  }
+
+  function scrollToLatest() {
+    const container = messagesRef.current;
+    if (!container) return;
+    autoFollowRef.current = true;
+    setShowScrollToBottom(false);
+    container.scrollTo({ top: container.scrollHeight, behavior: "smooth" });
+  }
+
+  function interruptActiveRequest(label = "生成已中断") {
+    if (!abort.current && !sendLockRef.current) return;
+    activeRequestRef.current += 1;
+    abort.current?.abort();
+    abort.current = null;
+    sendLockRef.current = false;
+    setBusy(false);
+    setStopping(false);
+    setMessages((rows) => rows.map((message) =>
+      message.status === "generating" ? { ...message, status: "cancelled" } : message,
+    ));
+    setStageKind("idle");
+    setStage(label);
+  }
+
+  function selectConversation(id: number) {
+    if (id === conversationIdRef.current) {
+      setView("chat");
+      return;
+    }
+    interruptActiveRequest("已停止上一会话的生成");
+    setEvidence([]);
+    setChosen(null);
+    setStage("");
+    setStageKind("idle");
+    conversationIdRef.current = id;
+    setConversationId(id);
+    setView("chat");
+  }
+
+  function selectView(nextView: string) {
+    if (nextView !== "chat") interruptActiveRequest("生成已中断");
+    setView(nextView);
+  }
+
+  function toggleSidebar() {
+    const next = !sidebarCollapsed;
+    setSidebarCollapsed(next);
+    setConversationMenu(null);
+    window.localStorage.setItem("simulink-wiki:sidebar-collapsed", next ? "1" : "0");
+  }
+
+  async function updateConversation(id: number, payload: { title?: string; pinned?: boolean }) {
+    const response = await fetch(`${API}/api/conversations/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    if (!response.ok) throw new Error(`更新会话失败（${response.status}）`);
+    const updated = await response.json();
+    setConversations((rows) => {
+      const next = rows.map((item) => (item.id === id ? updated : item));
+      return next.sort((a, b) => {
+        if (a.pinned !== b.pinned) return Number(b.pinned) - Number(a.pinned);
+        return Date.parse(b.updated_at || "") - Date.parse(a.updated_at || "");
+      });
+    });
+    setSidebarNotice("");
+    return updated as Conversation;
+  }
+
+  async function toggleConversationPin(item: Conversation) {
+    try {
+      await updateConversation(item.id, { pinned: !item.pinned });
+      setConversationMenu(null);
+    } catch (error: any) {
+      setSidebarNotice(error.message);
+    }
+  }
+
+  function beginConversationRename(item: Conversation) {
+    setEditingConversationId(item.id);
+    setEditingTitle(item.title);
+    setConversationMenu(null);
+    setSidebarNotice("");
+  }
+
+  async function saveConversationRename(event: FormEvent) {
+    event.preventDefault();
+    if (!editingConversationId) return;
+    const title = editingTitle.trim();
+    if (!title) {
+      setSidebarNotice("会话名称不能为空");
+      return;
+    }
+    try {
+      await updateConversation(editingConversationId, { title });
+      setEditingConversationId(null);
+      setEditingTitle("");
+    } catch (error: any) {
+      setSidebarNotice(error.message);
+    }
+  }
+
+  function askDeleteConversation(item: Conversation) {
+    if (busy && item.id === conversationId) {
+      setSidebarNotice("请先停止当前回答，再删除这个会话");
+      setConversationMenu(null);
+      return;
+    }
+    setDeleteCandidate(item);
+    setConversationMenu(null);
+  }
+
+  async function confirmDeleteConversation() {
+    if (!deleteCandidate) return;
+    const deletingId = deleteCandidate.id;
+    try {
+      const response = await fetch(`${API}/api/conversations/${deletingId}`, { method: "DELETE" });
+      if (!response.ok) throw new Error(`删除会话失败（${response.status}）`);
+      const remaining = conversations.filter((item) => item.id !== deletingId);
+      setConversations(remaining);
+      if (conversationId === deletingId) {
+        setConversationId(remaining[0]?.id ?? null);
+        setMessages([]);
+        setEvidence([]);
+        setChosen(null);
+      }
+      setDeleteCandidate(null);
+      setSidebarNotice("");
+    } catch (error: any) {
+      setSidebarNotice(error.message);
+      setDeleteCandidate(null);
+    }
+  }
 
   async function createConversation() {
+    interruptActiveRequest("已停止上一会话的生成");
     const row = await fetch(`${API}/api/conversations`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ title: "新对话" }),
     }).then((r) => r.json());
     setConversations((rows) => [row, ...rows]);
+    conversationIdRef.current = row.id;
     setConversationId(row.id);
     setMessages([]);
     setView("chat");
@@ -224,7 +454,7 @@ export default function Home() {
     setConversations((rows) => rows.map((item) => (item.id === conversationId ? row : item)));
   }
 
-  async function pollEvaluation(messageId: number) {
+  async function pollEvaluation(messageId: number, originConversationId: number, requestId: number) {
     for (let i = 0; i < 20; i++) {
       await new Promise((resolve) => setTimeout(resolve, 1200));
       const row = await fetch(`${API}/api/messages/${messageId}`).then((r) => (r.ok ? r.json() : null));
@@ -232,13 +462,20 @@ export default function Home() {
       setMessages((rows) =>
         rows.map((message) => (message.id === messageId ? { ...message, evaluation: row.evaluation } : message)),
       );
-      setStage("后台评估完成");
+      if (activeRequestRef.current === requestId && conversationIdRef.current === originConversationId) {
+        setStageKind("done");
+        setStage("后台评估完成");
+      }
       return;
     }
   }
 
-  async function send() {
-    if (!question.trim() || busy) return;
+  async function send(overrideText?: string) {
+    const requestedText = (overrideText ?? question).trim();
+    if (!requestedText || sendLockRef.current) return;
+    sendLockRef.current = true;
+    const requestId = activeRequestRef.current + 1;
+    activeRequestRef.current = requestId;
 
     let id = conversationId;
     if (!id) {
@@ -248,17 +485,22 @@ export default function Home() {
         body: JSON.stringify({ title: "新对话" }),
       }).then((r) => r.json());
       id = row.id;
+      conversationIdRef.current = id;
       setConversationId(id);
       setConversations((rows) => [row, ...rows]);
     }
+    const activeConversationId = id as number;
 
-    const text = question.trim();
+    const text = requestedText;
     const tempUserId = -Date.now();
     const tempAssistantId = tempUserId - 1;
     let liveAssistantId = tempAssistantId;
 
     setQuestion("");
     setBusy(true);
+    setStopping(false);
+    autoFollowRef.current = true;
+    setShowScrollToBottom(false);
     setStage("正在连接本地 API…");
     setStageKind("connecting");
     setStage("正在连接本地 API…");
@@ -268,13 +510,14 @@ export default function Home() {
       { id: tempAssistantId, role: "assistant", content: "", status: "generating", citations: [] },
     ]);
 
-    abort.current = new AbortController();
+    const controller = new AbortController();
+    abort.current = controller;
     try {
-      const response = await fetch(`${API}/api/conversations/${id}/messages/stream`, {
+      const response = await fetch(`${API}/api/conversations/${activeConversationId}/messages/stream`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ content: text }),
-        signal: abort.current.signal,
+        signal: controller.signal,
       });
       if (!response.body) throw Error("SSE unavailable");
 
@@ -290,6 +533,7 @@ export default function Home() {
         buffer = events.pop() || "";
 
         for (const eventText of events) {
+          if (activeRequestRef.current !== requestId) continue;
           const event = eventText.match(/^event: (.+)$/m)?.[1];
           const dataLine = eventText.split("\n").find((line) => line.startsWith("data: "));
           if (!event || !dataLine) continue;
@@ -348,7 +592,8 @@ export default function Home() {
               ),
             );
             setBusy(false);
-            if (!data.evaluation) pollEvaluation(liveAssistantId);
+            sendLockRef.current = false;
+            if (!data.evaluation) pollEvaluation(liveAssistantId, activeConversationId, requestId);
             setStageKind(data.evaluation ? "done" : "judge");
             setStage(data.evaluation ? "已直接回答" : "答案已生成，后台正在做证据检查…");
           }
@@ -363,18 +608,84 @@ export default function Home() {
           }
           if (event === "error") {
             setBusy(false);
+            sendLockRef.current = false;
+            setMessages((rows) => rows.map((message) =>
+              message.id === liveAssistantId ? { ...message, status: "failed", error: data.message } : message,
+            ));
             setStageKind("error");
             setStage(data.message);
           }
         }
       }
-      await refresh();
+      if (activeRequestRef.current === requestId) await refresh();
     } catch (error: any) {
-      setStageKind(error.name === "AbortError" ? "idle" : "error");
-      setStage(error.name === "AbortError" ? "已停止" : error.message);
+      if (activeRequestRef.current === requestId) {
+        const interrupted = error.name === "AbortError";
+        setMessages((rows) => rows.map((message) =>
+          message.id === liveAssistantId || message.id === tempAssistantId
+            ? { ...message, status: interrupted ? "cancelled" : "failed", error: interrupted ? null : error.message }
+            : message,
+        ));
+        setStageKind(interrupted ? "idle" : "error");
+        setStage(interrupted ? "生成已中断，可重新生成" : error.message);
+        if (interrupted) {
+          await new Promise((resolve) => setTimeout(resolve, 120));
+          if (conversationIdRef.current === activeConversationId) await loadConversation(activeConversationId);
+        }
+      }
     } finally {
-      setBusy(false);
+      if (activeRequestRef.current === requestId) {
+        setBusy(false);
+        setStopping(false);
+        sendLockRef.current = false;
+        if (abort.current === controller) abort.current = null;
+      }
     }
+  }
+
+  function stopGeneration() {
+    if (!busy || stopping) return;
+    setStopping(true);
+    setStage("正在停止生成…");
+    abort.current?.abort();
+  }
+
+  async function copyMessage(message: Message) {
+    await navigator.clipboard.writeText(message.content);
+    setCopiedMessageId(message.id);
+    window.setTimeout(() => setCopiedMessageId((id) => (id === message.id ? null : id)), 1400);
+  }
+
+  async function regenerateMessage(message: Message) {
+    if (sendLockRef.current) return;
+    const response = await fetch(`${API}/api/messages/${message.id}/regenerate`, { method: "POST" });
+    if (!response.ok) {
+      setStageKind("error");
+      setStage("无法找到这条回答对应的问题");
+      return;
+    }
+    const payload = await response.json();
+    await send(payload.content);
+  }
+
+  async function submitFeedback(message: Message, feedback: "up" | "down") {
+    if (message.feedback === feedback) return;
+    const response = await fetch(`${API}/api/messages/${message.id}/feedback`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ feedback }),
+    });
+    if (!response.ok) return;
+    const payload = await response.json();
+    setMessages((rows) => rows.map((item) =>
+      item.id === message.id ? { ...item, feedback: payload.feedback } : item,
+    ));
+  }
+
+  function showMessageEvidence(message: Message) {
+    const rows = message.citations || [];
+    setEvidence(rows);
+    if (rows[0]) openEvidence(rows[0].chunk_id, rows[0]);
   }
 
   function onKeyDown(event: KeyboardEvent<HTMLTextAreaElement>) {
@@ -397,6 +708,8 @@ export default function Home() {
       <button
         className="cite"
         type="button"
+        title={`查看证据 E:${id}`}
+        aria-label={`查看证据 E:${id}`}
         onClick={(event) => {
           event.preventDefault();
           event.stopPropagation();
@@ -409,20 +722,32 @@ export default function Home() {
   }
 
   const current = conversations.find((item) => item.id === conversationId);
+  const filteredConversations = useMemo(() => {
+    const query = conversationQuery.trim().toLowerCase();
+    if (!query) return conversations;
+    return conversations.filter((item) => item.title.toLowerCase().includes(query));
+  }, [conversations, conversationQuery]);
   const latestAssistant = [...messages].reverse().find((message) => message.role !== "user");
   const currentTrace = latestAssistant?.retrieval_trace || {};
+  const menuConversation = conversationMenu ? conversations.find((item) => item.id === conversationMenu.id) : null;
 
   return (
-    <main className={`app ${view === "graph" ? "graph-mode" : ""}`}>
-      <aside className="left">
+    <main className={`app ${view === "graph" ? "graph-mode" : ""} ${sidebarCollapsed ? "sidebar-collapsed" : ""}`}>
+      <aside className={`left ${sidebarCollapsed ? "collapsed" : ""}`}>
         <div className="brand">
           <b>SL</b>
           <span>
             Simulink Wiki<small>LOCAL KNOWLEDGE OS</small>
           </span>
         </div>
-        <button className="primary" onClick={createConversation}>
-          ＋ 新建对话
+        <button className="sidebar-toggle" type="button" onClick={toggleSidebar} aria-label={sidebarCollapsed ? "展开侧栏" : "收起侧栏"} title={sidebarCollapsed ? "展开侧栏" : "收起侧栏"}>
+          <svg viewBox="0 0 20 20" aria-hidden="true">
+            <path d={sidebarCollapsed ? "m8 5 5 5-5 5" : "m12 5-5 5 5 5"} />
+          </svg>
+        </button>
+        <button className="primary" onClick={createConversation} title="新建对话" aria-label="新建对话">
+          <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 4v12M4 10h12" /></svg>
+          <span>新建对话</span>
         </button>
         <nav>
           {[
@@ -434,30 +759,86 @@ export default function Home() {
             ["evaluations", "评测"],
             ["settings", "设置"],
           ].map(([key, label]) => (
-            <button className={view === key ? "on" : ""} onClick={() => setView(key)} key={key}>
-              {label}
+            <button className={view === key ? "on" : ""} onClick={() => selectView(key)} key={key} title={label} aria-label={label}>
+              <NavIcon name={key} />
+              <span>{label}</span>
             </button>
           ))}
         </nav>
-        <h4>历史对话</h4>
-        <div className="history">
-          {conversations.map((item) => (
-            <button
-              className={conversationId === item.id ? "on" : ""}
-              onClick={() => {
-                setConversationId(item.id);
-                setView("chat");
-              }}
-              key={item.id}
-            >
-              {item.pinned ? "◆ " : ""}
-              {item.title}
-            </button>
-          ))}
+        <div className="history-heading">
+          <h4>历史对话</h4>
+          <span>{conversations.length}</span>
         </div>
+        <label className="history-search">
+          <svg viewBox="0 0 20 20" aria-hidden="true">
+            <circle cx="8.7" cy="8.7" r="4.8" />
+            <path d="m12.3 12.3 3.4 3.4" />
+          </svg>
+          <input
+            value={conversationQuery}
+            onChange={(event) => setConversationQuery(event.target.value)}
+            placeholder="搜索对话"
+            aria-label="搜索历史对话"
+          />
+        </label>
+        <div className="history">
+          {filteredConversations.map((item) => (
+            <div className={`history-item ${conversationId === item.id ? "on" : ""}`} key={item.id}>
+              {editingConversationId === item.id ? (
+                <form className="history-rename" onSubmit={saveConversationRename}>
+                  <input
+                    autoFocus
+                    value={editingTitle}
+                    onChange={(event) => setEditingTitle(event.target.value)}
+                    onKeyDown={(event) => {
+                      if (event.key === "Escape") {
+                        setEditingConversationId(null);
+                        setEditingTitle("");
+                      }
+                    }}
+                    aria-label="新的会话名称"
+                  />
+                  <button type="submit" aria-label="保存名称" title="保存">✓</button>
+                  <button type="button" aria-label="取消重命名" title="取消" onClick={() => setEditingConversationId(null)}>×</button>
+                </form>
+              ) : (
+                <>
+                  <button
+                    className="history-open"
+                    onClick={() => selectConversation(item.id)}
+                    title={item.title}
+                  >
+                    <i className={item.pinned ? "is-pinned" : ""} aria-hidden="true" />
+                    <span>{item.title}</span>
+                  </button>
+                  <button
+                    type="button"
+                    className="history-more"
+                    aria-label={`管理会话：${item.title}`}
+                    title="会话操作"
+                    aria-expanded={conversationMenu?.id === item.id}
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      const rect = event.currentTarget.getBoundingClientRect();
+                      setConversationMenu({
+                        id: item.id,
+                        top: Math.min(rect.bottom + 5, window.innerHeight - 142),
+                        left: Math.max(8, Math.min(rect.right - 156, window.innerWidth - 164)),
+                      });
+                    }}
+                  >
+                    <span aria-hidden="true">···</span>
+                  </button>
+                </>
+              )}
+            </div>
+          ))}
+          {!filteredConversations.length && <small className="history-empty">没有匹配的对话</small>}
+        </div>
+        {sidebarNotice && <small className="sidebar-notice">{sidebarNotice}</small>}
         <footer>
-          <i />
-          本地模型在线
+          <span><i /><b>本地模型在线</b></span>
+          <small>Ollama · Local</small>
         </footer>
       </aside>
 
@@ -471,7 +852,12 @@ export default function Home() {
               </div>
               <SourceFilter current={current} documents={documents} onChange={saveFilter} />
             </header>
-            <div className="messages">
+            <div
+              className="messages"
+              ref={messagesRef}
+              onScroll={handleMessagesScroll}
+              style={{ paddingBottom: composerHeight + 28 }}
+            >
               {stage && (
                 <div className={`chat-status ${stageKind}`}>
                   <span />
@@ -501,12 +887,45 @@ export default function Home() {
                           ),
                         }}
                       >
-                        {citationMarkdown(message.content || (role === "assistant" ? "正在生成…" : ""))}
+                        {citationMarkdown(message.content || (
+                          role !== "assistant" ? "" : message.status === "generating" ? "正在生成…" :
+                            message.status === "failed" ? "本次生成失败。" : "本次生成已中断。"
+                        ))}
                       </ReactMarkdown>
                       {role === "assistant" && typeof message.evaluation?.passed === "boolean" && (
                         <small className={message.evaluation.passed ? "pass" : "fail"}>
                           {message.evaluation.passed ? "已通过证据检查" : "需要复核"}
                         </small>
+                      )}
+                      {role === "assistant" && ["cancelled", "interrupted", "failed"].includes(message.status) && (
+                        <small className={`message-state ${message.status === "failed" ? "is-error" : ""}`}>
+                          {message.status === "failed" ? "生成失败" : "生成已中断"}
+                          {message.content ? " · 已保留部分回答" : ""}
+                        </small>
+                      )}
+                      {role === "assistant" && message.status !== "generating" && (
+                        <div className="message-actions" aria-label="回答操作">
+                          <button type="button" onClick={() => copyMessage(message)} title="复制回答" aria-label="复制回答">
+                            <svg viewBox="0 0 20 20" aria-hidden="true"><rect x="6.5" y="6.5" width="9" height="9" rx="1.5" /><path d="M4.5 13.5h-1v-10h10v1" /></svg>
+                            <span>{copiedMessageId === message.id ? "已复制" : "复制"}</span>
+                          </button>
+                          <button type="button" onClick={() => regenerateMessage(message)} disabled={busy} title="重新生成" aria-label="重新生成">
+                            <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M15.5 7.5A6 6 0 1 0 16 12" /><path d="M15.5 3.5v4h-4" /></svg>
+                            <span>{["cancelled", "interrupted", "failed"].includes(message.status) ? "重试" : "重新生成"}</span>
+                          </button>
+                          <button type="button" className={message.feedback === "up" ? "active" : ""} onClick={() => submitFeedback(message, "up")} title="回答有帮助" aria-label="回答有帮助">
+                            <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M7 16H4.5V9H7zM7 15.5h7.1c.8 0 1.3-.5 1.5-1.2l1-4c.2-.9-.5-1.8-1.4-1.8H12l.5-2.5c.2-1-.5-2-1.5-2L7 9z" /></svg>
+                          </button>
+                          <button type="button" className={message.feedback === "down" ? "active" : ""} onClick={() => submitFeedback(message, "down")} title="回答需改进" aria-label="回答需改进">
+                            <svg className="flip" viewBox="0 0 20 20" aria-hidden="true"><path d="M7 16H4.5V9H7zM7 15.5h7.1c.8 0 1.3-.5 1.5-1.2l1-4c.2-.9-.5-1.8-1.4-1.8H12l.5-2.5c.2-1-.5-2-1.5-2L7 9z" /></svg>
+                          </button>
+                          {!!message.citations?.length && (
+                            <button type="button" onClick={() => showMessageEvidence(message)} title="查看本轮证据" aria-label="查看本轮证据">
+                              <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M3.5 10s2.2-4 6.5-4 6.5 4 6.5 4-2.2 4-6.5 4-6.5-4-6.5-4z" /><circle cx="10" cy="10" r="1.8" /></svg>
+                              <span>证据 {message.citations.length}</span>
+                            </button>
+                          )}
+                        </div>
                       )}
                     </div>
                   </article>
@@ -514,16 +933,49 @@ export default function Home() {
               })}
               <div ref={messagesEndRef} />
             </div>
-            <div className="compose">
-              <small>{stage}</small>
-              <div>
+            {showScrollToBottom && (
+              <button
+                type="button"
+                className="scroll-to-latest"
+                style={{ bottom: composerHeight + 12 }}
+                onClick={scrollToLatest}
+                aria-label="回到底部"
+                title="回到底部"
+              >
+                <svg viewBox="0 0 20 20" aria-hidden="true">
+                  <path d="M10 4.5v10.75M5.75 11 10 15.25 14.25 11" />
+                </svg>
+              </button>
+            )}
+            <div className="compose" ref={composerRef}>
+              <small className={`composer-status ${stageKind}`}>
+                {stage && <span aria-hidden="true" />}
+                {stage}
+              </small>
+              <div className="composer-shell">
                 <textarea
+                  ref={textareaRef}
                   value={question}
                   onChange={(event) => setQuestion(event.target.value)}
                   onKeyDown={onKeyDown}
                   placeholder="询问 Simulink 知识…"
                 />
-                <button onClick={busy ? () => abort.current?.abort() : send}>{busy ? "■" : "↑"}</button>
+                <button
+                  type="button"
+                  className={`composer-action ${busy ? "is-stop" : "is-send"}`}
+                  onClick={busy ? stopGeneration : () => send()}
+                  disabled={stopping || (!busy && !question.trim())}
+                  aria-label={busy ? (stopping ? "正在停止生成" : "停止生成") : "发送消息"}
+                  title={busy ? (stopping ? "正在停止…" : "停止生成") : "发送消息"}
+                >
+                  {busy ? (
+                    <span className="stop-icon" aria-hidden="true" />
+                  ) : (
+                    <svg viewBox="0 0 20 20" aria-hidden="true">
+                      <path d="M10 15.5V4.75M5.75 9 10 4.75 14.25 9" />
+                    </svg>
+                  )}
+                </button>
               </div>
             </div>
           </>
@@ -614,6 +1066,45 @@ export default function Home() {
           </div>
         )}
       </aside>
+      {conversationMenu && menuConversation && typeof document !== "undefined" && createPortal(
+        <div
+          className="conversation-menu"
+          style={{ top: conversationMenu.top, left: conversationMenu.left }}
+          role="menu"
+          onPointerDown={(event) => event.stopPropagation()}
+        >
+          <button type="button" role="menuitem" onClick={() => toggleConversationPin(menuConversation)}>
+            <span>{menuConversation.pinned ? "◇" : "◆"}</span>
+            {menuConversation.pinned ? "取消置顶" : "置顶会话"}
+          </button>
+          <button type="button" role="menuitem" onClick={() => beginConversationRename(menuConversation)}>
+            <span>✎</span>重命名
+          </button>
+          <button type="button" role="menuitem" className="danger" onClick={() => askDeleteConversation(menuConversation)}>
+            <span>×</span>删除会话
+          </button>
+        </div>,
+        document.body,
+      )}
+      {deleteCandidate && typeof document !== "undefined" && createPortal(
+        <div
+          className="conversation-dialog-backdrop"
+          onPointerDown={(event) => {
+            if (event.target === event.currentTarget) setDeleteCandidate(null);
+          }}
+        >
+          <section className="conversation-dialog" role="dialog" aria-modal="true" aria-labelledby="delete-conversation-title">
+            <small>删除会话</small>
+            <h3 id="delete-conversation-title">确定删除“{deleteCandidate.title}”吗？</h3>
+            <p>该会话及其中的消息会被删除，知识库、Wiki和长期记忆内容不会被删除。</p>
+            <div>
+              <button type="button" onClick={() => setDeleteCandidate(null)}>取消</button>
+              <button type="button" className="danger" onClick={confirmDeleteConversation}>删除</button>
+            </div>
+          </section>
+        </div>,
+        document.body,
+      )}
     </main>
   );
 }
@@ -990,6 +1481,7 @@ function GraphWorkspace({
 }) {
   const [selected, setSelected] = useState<GraphNode | null>(null);
   const [compiling, setCompiling] = useState(false);
+  const [queryInput, setQueryInput] = useState("");
   const [query, setQuery] = useState("");
   const [maxNodes, setMaxNodes] = useState(220);
   const [enabledTypes, setEnabledTypes] = useState<Record<string, boolean>>({
@@ -1001,6 +1493,7 @@ function GraphWorkspace({
   });
   const cyRef = useRef<Core | null>(null);
   const graphRef = useRef<HTMLDivElement | null>(null);
+  const openEvidenceRef = useRef(onOpenEvidence);
   const nodes = graphData.nodes || [];
   const edges = graphData.edges || [];
   const byId = useMemo(() => new Map(nodes.map((node) => [node.id, node])), [nodes]);
@@ -1048,18 +1541,38 @@ function GraphWorkspace({
   );
 
   useEffect(() => {
+    openEvidenceRef.current = onOpenEvidence;
+  }, [onOpenEvidence]);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => setQuery(queryInput), 280);
+    return () => window.clearTimeout(timer);
+  }, [queryInput]);
+
+  useEffect(() => {
+    if (selected && !visibleIds.has(selected.id)) setSelected(null);
+  }, [selected, visibleIds]);
+
+  useEffect(() => {
     if (!graphRef.current) return;
+    const searchNeedle = query.trim().toLowerCase();
     const elements: ElementDefinition[] = [
-      ...visibleNodes.map((node) => ({
-        data: {
-          id: node.id,
-          label: node.label,
-          type: node.type,
-          entityType: node.entity_type || node.page_type || node.type,
-          size: Math.min(62, 22 + Math.sqrt((degree.get(node.id) || 1) * 18)),
-        },
-        classes: `node-${node.type}`,
-      })),
+      ...visibleNodes.map((node, index) => {
+        const matchesSearch = searchNeedle && [node.label, node.id, node.entity_type, node.document_title]
+          .filter(Boolean)
+          .some((value) => String(value).toLowerCase().includes(searchNeedle));
+        return {
+          data: {
+            id: node.id,
+            label: node.label,
+            displayLabel: searchNeedle ? (matchesSearch ? node.label : "") : (index < 90 ? node.label : ""),
+            type: node.type,
+            entityType: node.entity_type || node.page_type || node.type,
+            size: Math.min(62, 22 + Math.sqrt((degree.get(node.id) || 1) * 18)),
+          },
+          classes: `node-${node.type}`,
+        };
+      }),
       ...visibleEdges.map((edge, index) => ({
         data: {
           id: `edge:${index}:${edge.source}:${edge.target}:${edge.label}`,
@@ -1078,7 +1591,11 @@ function GraphWorkspace({
       elements,
       minZoom: 0.25,
       maxZoom: 3,
-      wheelSensitivity: 0.18,
+      wheelSensitivity: 0.48,
+      hideEdgesOnViewport: true,
+      hideLabelsOnViewport: true,
+      textureOnViewport: true,
+      pixelRatio: 1,
       style: [
         {
           selector: "node",
@@ -1088,8 +1605,8 @@ function GraphWorkspace({
             "border-width": 2,
             color: "#172033",
             "font-size": 10,
-            label: "data(label)",
-            "min-zoomed-font-size": 8,
+            label: "data(displayLabel)",
+            "min-zoomed-font-size": 10,
             "text-background-color": "#ffffff",
             "text-background-opacity": 0.82,
             "text-background-padding": "3px",
@@ -1108,7 +1625,7 @@ function GraphWorkspace({
         {
           selector: "edge",
           style: {
-            "curve-style": "bezier",
+            "curve-style": "straight",
             "line-color": "#c6d7ee",
             opacity: 0.42,
             "target-arrow-color": "#c6d7ee",
@@ -1121,7 +1638,7 @@ function GraphWorkspace({
         { selector: ".selected", style: { "border-color": "#0f172a", "border-width": 4, "background-blacken": -0.08 } },
       ] as any,
       layout: {
-        name: "cose",
+        name: query ? "concentric" : "cose",
         animate: false,
         fit: true,
         padding: 42,
@@ -1129,14 +1646,16 @@ function GraphWorkspace({
         idealEdgeLength: 120,
         edgeElasticity: 90,
         nestingFactor: 1.1,
-        numIter: 900,
+        numIter: query ? undefined : 360,
+        minNodeSpacing: 28,
       } as any,
     });
 
     cy.on("tap", "node", (event) => {
       const node = byId.get(event.target.id());
       if (!node) return;
-      clickNode(node);
+      setSelected(node);
+      if (node.type === "evidence" && node.chunk_id) openEvidenceRef.current(node.chunk_id, node);
     });
     cy.on("tap", (event) => {
       if (event.target === cy) {
@@ -1146,7 +1665,7 @@ function GraphWorkspace({
     });
     cyRef.current = cy;
     return () => cy.destroy();
-  }, [visibleNodes, visibleEdges, byId, degree, onOpenEvidence]);
+  }, [visibleNodes, visibleEdges, byId, degree, query]);
 
   useEffect(() => {
     const cy = cyRef.current;
@@ -1222,8 +1741,8 @@ function GraphWorkspace({
 
       <div className="graph-toolbar">
         <input
-          value={query}
-          onChange={(event) => setQuery(event.target.value)}
+          value={queryInput}
+          onChange={(event) => setQueryInput(event.target.value)}
           placeholder="搜索实体、Wiki、文档，例如 AUTOSAR / Simulink / ARXML"
         />
         <select value={maxNodes} onChange={(event) => setMaxNodes(Number(event.target.value))}>

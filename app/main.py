@@ -9,6 +9,7 @@ from app.api.routes import router
 from app.config import get_settings
 from app.database import database_is_ready, initialize_database
 from app.services.storage import ensure_storage
+from app.services.conversations import reconcile_interrupted_messages
 
 settings = get_settings()
 
@@ -17,6 +18,7 @@ settings = get_settings()
 async def lifespan(_: FastAPI):
     initialize_database()
     ensure_storage()
+    reconcile_interrupted_messages()
     yield
 
 

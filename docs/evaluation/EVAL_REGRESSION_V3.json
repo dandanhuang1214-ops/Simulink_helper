@@ -1,0 +1,842 @@
+{
+  "version": "3.0",
+  "status": "frozen_v3_holdout",
+  "annotation_policy": "source_first_no_retrieval_labels",
+  "created_from": "approved_question_draft",
+  "usage_policy": "single_blind_baseline_then_single_acceptance; tuning on v3 downgrades it to development",
+  "cases": [
+    {
+      "id": "V3-SIM-01",
+      "domain": "simulink",
+      "type": "procedure",
+      "query_style": "间接流程 / 无“如何”",
+      "question": "模型层级比较深时，请说明从顶层定位到某个子系统，并继续追踪一条信号来源的操作顺序。",
+      "expected_mode": "rag",
+      "expected_docs": [
+        "MathWorks_Simulink_Getting_Started_R2026a"
+      ],
+      "expected_sections": [
+        "View Model Hierarchy",
+        "Trace a Signal"
+      ],
+      "must_cover": [
+        "层级导航与信号追踪应区分；不得把普通搜索说成信号追踪。"
+      ],
+      "forbidden": [
+        "层级导航与信号追踪应区分；不得把普通搜索说成信号追踪。"
+      ],
+      "gold_evidence": [
+        1018,
+        1019,
+        1022
+      ],
+      "gold_status": "annotated_source",
+      "gold_notes": "Source-first annotation from immutable evidence chunks: E:1018, E:1019, E:1022.",
+      "review_status": "keep"
+    },
+    {
+      "id": "V3-SIM-02",
+      "domain": "simulink",
+      "type": "scenario",
+      "query_style": "场景解释",
+      "question": "修改块参数后，仿真停止时间和块参数分别控制什么，查看结果时需要注意什么？",
+      "expected_mode": "rag",
+      "expected_docs": [
+        "MathWorks_Simulink_Getting_Started_R2026a"
+      ],
+      "expected_sections": [
+        "Edit Block Parameters",
+        "Run a Simulation",
+        "View Simulation Data"
+      ],
+      "must_cover": [
+        "区分模型/块参数、停止时间与结果查看；不编造统一单位。"
+      ],
+      "forbidden": [
+        "区分模型/块参数、停止时间与结果查看；不编造统一单位。"
+      ],
+      "gold_evidence": [
+        1007,
+        1008,
+        1009
+      ],
+      "gold_status": "annotated_source",
+      "gold_notes": "Source-first annotation from immutable evidence chunks: E:1007, E:1008, E:1009.",
+      "review_status": "keep"
+    },
+    {
+      "id": "V3-SIM-03",
+      "domain": "simulink",
+      "type": "procedure",
+      "query_style": "口语流程",
+      "question": "我把几个 block 放进模型了，接下来怎样连线、运行并在 Data Inspector 里看曲线？",
+      "expected_mode": "rag",
+      "expected_docs": [
+        "MathWorks_Simulink_Getting_Started_R2026a"
+      ],
+      "expected_sections": [
+        "Connect Blocks",
+        "Run a Simulation",
+        "View Simulation Data"
+      ],
+      "must_cover": [
+        "连线、运行、查看是连续但可区分的阶段；UI 动作必须有证据。"
+      ],
+      "forbidden": [
+        "不得超出原始证据或把限定条件泛化。"
+      ],
+      "gold_evidence": [
+        1005,
+        1008,
+        1009,
+        1012
+      ],
+      "gold_status": "annotated_source",
+      "gold_notes": "Source-first annotation from immutable evidence chunks: E:1005, E:1008, E:1009, E:1012.",
+      "review_status": "keep"
+    },
+    {
+      "id": "V3-SIM-04",
+      "domain": "simulink",
+      "type": "scenario",
+      "query_style": "概念边界",
+      "question": "subsystem 只是为了让画布更整洁吗？它在模型层级和封装方面还有什么作用？",
+      "expected_mode": "rag",
+      "expected_docs": [
+        "MathWorks_Simulink_Getting_Started_R2026a"
+      ],
+      "expected_sections": [
+        "View Model Hierarchy",
+        "Subsystem Ports and Data Transfer"
+      ],
+      "must_cover": [
+        "回答层级与封装，不把所有 subsystem 都说成原子执行单元。"
+      ],
+      "forbidden": [
+        "回答层级与封装，不把所有 subsystem 都说成原子执行单元。"
+      ],
+      "gold_evidence": [
+        1018,
+        1020
+      ],
+      "gold_status": "annotated_source",
+      "gold_notes": "Source-first annotation from immutable evidence chunks: E:1018, E:1020.",
+      "review_status": "keep"
+    },
+    {
+      "id": "V3-SIM-05",
+      "domain": "simulink",
+      "type": "boundary",
+      "query_style": "缺失材料诊断",
+      "question": "手头没有 SLX 文件、输入数据和仿真日志，能不能直接定位这个模型为什么输出异常？",
+      "expected_mode": "refusal",
+      "expected_docs": [],
+      "expected_sections": [],
+      "must_cover": [
+        "明确无法直接定位；请求最小模型、输入、复现步骤和日志，可提供通用排查方法。"
+      ],
+      "forbidden": [
+        "不得超出原始证据或把限定条件泛化。"
+      ],
+      "gold_evidence": [],
+      "gold_status": "not_applicable",
+      "gold_notes": "边界题不绑定证据块；需要识别知识范围或私有运行材料缺失。",
+      "review_status": "keep"
+    },
+    {
+      "id": "V3-AUT-01",
+      "domain": "autosar",
+      "type": "relationship",
+      "query_style": "多意图关系",
+      "question": "AUTOSAR 组件中的端口、数据元素和 runnable，到了 Simulink 组件模型里分别落在什么位置？",
+      "expected_mode": "rag",
+      "expected_docs": [
+        "AUTOSAR Blockset User Guide R2024a"
+      ],
+      "expected_sections": [
+        "Model AUTOSAR Communication",
+        "Configure AUTOSAR Runnables"
+      ],
+      "must_cover": [
+        "说明映射关系和边界，不把端口、数据元素、runnable 混为一类。"
+      ],
+      "forbidden": [
+        "说明映射关系和边界，不把端口、数据元素、runnable 混为一类。"
+      ],
+      "gold_evidence": [
+        210,
+        211,
+        213,
+        205
+      ],
+      "gold_status": "annotated_source",
+      "gold_notes": "Source-first annotation from immutable evidence chunks: E:210, E:211, E:213, E:205.",
+      "review_status": "keep"
+    },
+    {
+      "id": "V3-AUT-02",
+      "domain": "autosar",
+      "type": "procedure",
+      "query_style": "间接流程 / “怎样”",
+      "question": "作者工具重新导出了一版 ARXML，已有 Simulink 组件模型怎样同步这些变化？",
+      "expected_mode": "rag",
+      "expected_docs": [
+        "AUTOSAR Blockset User Guide R2024a"
+      ],
+      "expected_sections": [
+        "Update AUTOSAR Component Model"
+      ],
+      "must_cover": [
+        "区分首次导入与更新；不得声称所有手工修改都能无冲突保留。"
+      ],
+      "forbidden": [
+        "区分首次导入与更新；不得声称所有手工修改都能无冲突保留。"
+      ],
+      "gold_evidence": [
+        264,
+        269,
+        278,
+        279,
+        282
+      ],
+      "gold_status": "annotated_source",
+      "gold_notes": "Source-first annotation from immutable evidence chunks: E:264, E:269, E:278, E:279, E:282.",
+      "review_status": "keep"
+    },
+    {
+      "id": "V3-AUT-03",
+      "domain": "autosar",
+      "type": "scenario",
+      "query_style": "概念+操作",
+      "question": "标定参数在 AUTOSAR 组件模型中表示什么，模型里通常怎样配置或映射？",
+      "expected_mode": "rag",
+      "expected_docs": [
+        "AUTOSAR Blockset User Guide R2024a"
+      ],
+      "expected_sections": [
+        "Calibration Parameters",
+        "Configure AUTOSAR Parameters"
+      ],
+      "must_cover": [
+        "定义与配置证据分开；不能泛化成所有参数都是标定参数。"
+      ],
+      "forbidden": [
+        "定义与配置证据分开；不能泛化成所有参数都是标定参数。"
+      ],
+      "gold_evidence": [
+        246,
+        247,
+        325,
+        578
+      ],
+      "gold_status": "annotated_source",
+      "gold_notes": "Source-first annotation from immutable evidence chunks: E:246, E:247, E:325, E:578.",
+      "review_status": "keep"
+    },
+    {
+      "id": "V3-AUT-04",
+      "domain": "autosar",
+      "type": "relationship",
+      "query_style": "输出关系",
+      "question": "从 AUTOSAR 组件模型生成代码时，C 代码和 ARXML 各自描述什么，二者如何配合交付？",
+      "expected_mode": "rag",
+      "expected_docs": [
+        "AUTOSAR Blockset User Guide R2024a"
+      ],
+      "expected_sections": [
+        "Generate AUTOSAR Code and ARXML"
+      ],
+      "must_cover": [
+        "代码与描述文件职责不同；不能把生成结果说成可直接量产的完整 ECU。"
+      ],
+      "forbidden": [
+        "代码与描述文件职责不同；不能把生成结果说成可直接量产的完整 ECU。"
+      ],
+      "gold_evidence": [
+        161,
+        205,
+        214,
+        274
+      ],
+      "gold_status": "annotated_source",
+      "gold_notes": "Source-first annotation from immutable evidence chunks: E:161, E:205, E:214, E:274.",
+      "review_status": "keep"
+    },
+    {
+      "id": "V3-AUT-05",
+      "domain": "autosar",
+      "type": "boundary",
+      "query_style": "第三方私有环境",
+      "question": "只有 MathWorks 文档，没有我的 EB tresos 工程、ECUC 配置和目标 ECU 信息，能直接给出可落地的完整配置吗？",
+      "expected_mode": "refusal",
+      "expected_docs": [],
+      "expected_sections": [],
+      "must_cover": [
+        "不冒充访问第三方工程；说明需要的工程与配置材料。"
+      ],
+      "forbidden": [
+        "不冒充访问第三方工程；说明需要的工程与配置材料。"
+      ],
+      "gold_evidence": [],
+      "gold_status": "not_applicable",
+      "gold_notes": "边界题不绑定证据块；需要识别知识范围或私有运行材料缺失。",
+      "review_status": "keep"
+    },
+    {
+      "id": "V3-STF-01",
+      "domain": "stateflow",
+      "type": "comparison",
+      "query_style": "比较",
+      "question": "Stateflow 中并行状态与互斥状态的激活方式和执行语义有什么不同？",
+      "expected_mode": "rag",
+      "expected_docs": [
+        "MathWorks Stateflow User Guide"
+      ],
+      "expected_sections": [
+        "Define Exclusive and Parallel Modes",
+        "Execution Order for Parallel States"
+      ],
+      "must_cover": [
+        "区分 AND/OR 分解或等价概念；不杜撰固定执行顺序。"
+      ],
+      "forbidden": [
+        "区分 AND/OR 分解或等价概念；不杜撰固定执行顺序。"
+      ],
+      "gold_evidence": [
+        1098,
+        1744,
+        1194
+      ],
+      "gold_status": "annotated_source",
+      "gold_notes": "Source-first annotation from immutable evidence chunks: E:1098, E:1744, E:1194.",
+      "review_status": "keep"
+    },
+    {
+      "id": "V3-STF-02",
+      "domain": "stateflow",
+      "type": "scenario",
+      "query_style": "术语组合",
+      "question": "`after`、`every` 和基于持续时间的时间逻辑分别适合表达哪类行为？",
+      "expected_mode": "rag",
+      "expected_docs": [
+        "MathWorks Stateflow User Guide"
+      ],
+      "expected_sections": [
+        "Control Chart Execution by Using Temporal Logic"
+      ],
+      "must_cover": [
+        "说明时间逻辑差异及依赖的时间/事件语义，不虚构语法。"
+      ],
+      "forbidden": [
+        "说明时间逻辑差异及依赖的时间/事件语义，不虚构语法。"
+      ],
+      "gold_evidence": [
+        1646,
+        1647,
+        1650,
+        1651,
+        1652
+      ],
+      "gold_status": "annotated_source",
+      "gold_notes": "Source-first annotation from immutable evidence chunks: E:1646, E:1647, E:1650, E:1651, E:1652.",
+      "review_status": "keep"
+    },
+    {
+      "id": "V3-STF-03",
+      "domain": "stateflow",
+      "type": "scenario",
+      "query_style": "场景解释",
+      "question": "history junction 解决什么状态恢复问题，它和普通 connective junction 有什么区别？",
+      "expected_mode": "rag",
+      "expected_docs": [
+        "MathWorks Stateflow User Guide"
+      ],
+      "expected_sections": [
+        "Resume Prior Substate Activity",
+        "Combine Transitions and Junctions"
+      ],
+      "must_cover": [
+        "区分历史恢复与路径连接。"
+      ],
+      "forbidden": [
+        "不得超出原始证据或把限定条件泛化。"
+      ],
+      "gold_evidence": [
+        1128,
+        1124
+      ],
+      "gold_status": "annotated_source",
+      "gold_notes": "Source-first annotation from immutable evidence chunks: E:1128, E:1124.",
+      "review_status": "keep"
+    },
+    {
+      "id": "V3-STF-04",
+      "domain": "stateflow",
+      "type": "procedure",
+      "query_style": "执行链路",
+      "question": "一个 chart 收到输入事件后，状态、转移条件和动作大致按什么语义参与本次执行？",
+      "expected_mode": "rag",
+      "expected_docs": [
+        "MathWorks Stateflow User Guide"
+      ],
+      "expected_sections": [
+        "How Stateflow Objects Interact During Execution",
+        "Stateflow Semantics"
+      ],
+      "must_cover": [
+        "解释执行语义但避免声称所有 chart 都有同一固定路径。"
+      ],
+      "forbidden": [
+        "不得超出原始证据或把限定条件泛化。"
+      ],
+      "gold_evidence": [
+        1077,
+        1078,
+        1102,
+        1146
+      ],
+      "gold_status": "annotated_source",
+      "gold_notes": "Source-first annotation from immutable evidence chunks: E:1077, E:1078, E:1102, E:1146.",
+      "review_status": "keep"
+    },
+    {
+      "id": "V3-STF-05",
+      "domain": "stateflow",
+      "type": "boundary",
+      "query_style": "缺失材料同义表达",
+      "question": "我不给你 chart、事件序列和 trace，你能看出某次错误转移的根因吗？",
+      "expected_mode": "refusal",
+      "expected_docs": [],
+      "expected_sections": [],
+      "must_cover": [
+        "同 V3-SIM-05 的认识论边界；必须识别不同措辞。"
+      ],
+      "forbidden": [
+        "同 V3-SIM-05 的认识论边界；必须识别不同措辞。"
+      ],
+      "gold_evidence": [],
+      "gold_status": "not_applicable",
+      "gold_notes": "边界题不绑定证据块；需要识别知识范围或私有运行材料缺失。",
+      "review_status": "keep"
+    },
+    {
+      "id": "V3-TST-01",
+      "domain": "testing",
+      "type": "procedure",
+      "query_style": "生命周期",
+      "question": "被测组件发生结构变化后，test harness 的 rebuild、同步和重新打开分别可能影响什么？",
+      "expected_mode": "rag",
+      "expected_docs": [
+        "MathWorks Simulink Test User Guide R2025a"
+      ],
+      "expected_sections": [
+        "Rebuild Test Harness",
+        "Synchronize Test Harness"
+      ],
+      "must_cover": [
+        "同步时机与限制准确；不保证所有链接永久无损。"
+      ],
+      "forbidden": [
+        "同步时机与限制准确；不保证所有链接永久无损。"
+      ],
+      "gold_evidence": [
+        2484,
+        2522,
+        2523
+      ],
+      "gold_status": "annotated_source",
+      "gold_notes": "Source-first annotation from immutable evidence chunks: E:2484, E:2522, E:2523.",
+      "review_status": "keep"
+    },
+    {
+      "id": "V3-TST-02",
+      "domain": "testing",
+      "type": "procedure",
+      "query_style": "数据驱动流程",
+      "question": "同一个测试用例需要跑多组参数时，test iteration 的作用是什么，结果应怎样区分？",
+      "expected_mode": "rag",
+      "expected_docs": [
+        "MathWorks Simulink Test User Guide R2025a"
+      ],
+      "expected_sections": [
+        "Test Iterations"
+      ],
+      "must_cover": [
+        "参数迭代、运行与结果区分；不得把 iteration 等同多个独立 harness。"
+      ],
+      "forbidden": [
+        "参数迭代、运行与结果区分；不得把 iteration 等同多个独立 harness。"
+      ],
+      "gold_evidence": [
+        2853,
+        2854,
+        2856,
+        3012
+      ],
+      "gold_status": "annotated_source",
+      "gold_notes": "Source-first annotation from immutable evidence chunks: E:2853, E:2854, E:2856, E:3012.",
+      "review_status": "keep"
+    },
+    {
+      "id": "V3-TST-03",
+      "domain": "testing",
+      "type": "scenario",
+      "query_style": "结果判定",
+      "question": "Test Assessment 和基线比较分别在测试中解决什么问题，可以同时使用吗？",
+      "expected_mode": "rag",
+      "expected_docs": [
+        "MathWorks Simulink Test User Guide R2025a"
+      ],
+      "expected_sections": [
+        "Baseline Test",
+        "Test Assessment"
+      ],
+      "must_cover": [
+        "区分逻辑判定与基线信号比较；“可以同时使用”必须有证据边界。"
+      ],
+      "forbidden": [
+        "不得超出原始证据或把限定条件泛化。"
+      ],
+      "gold_evidence": [
+        2553,
+        2554,
+        2558,
+        2570
+      ],
+      "gold_status": "annotated_source",
+      "gold_notes": "Source-first annotation from immutable evidence chunks: E:2553, E:2554, E:2558, E:2570.",
+      "review_status": "keep"
+    },
+    {
+      "id": "V3-TST-04",
+      "domain": "testing",
+      "type": "procedure",
+      "query_style": "报告输出",
+      "question": "测试跑完后，怎样从 Test Manager 汇总结果并生成测试报告？",
+      "expected_mode": "rag",
+      "expected_docs": [
+        "MathWorks Simulink Test User Guide R2025a"
+      ],
+      "expected_sections": [
+        "Create a Test Results Report"
+      ],
+      "must_cover": [
+        "不与 Coverage 报告混淆；报告范围和入口需有证据。"
+      ],
+      "forbidden": [
+        "不与 Coverage 报告混淆；报告范围和入口需有证据。"
+      ],
+      "gold_evidence": [
+        2970,
+        2973,
+        2990
+      ],
+      "gold_status": "annotated_source",
+      "gold_notes": "Source-first annotation from immutable evidence chunks: E:2970, E:2973, E:2990.",
+      "review_status": "keep"
+    },
+    {
+      "id": "V3-TST-05",
+      "domain": "testing",
+      "type": "boundary",
+      "query_style": "私有文件边界",
+      "question": "没有我的 MLDATX、harness 和需求文件，你能判断某个测试为什么失败并指出具体步骤吗？",
+      "expected_mode": "refusal",
+      "expected_docs": [],
+      "expected_sections": [],
+      "must_cover": [
+        "不指定虚构失败步骤；请求测试文件、日志、评估结果和复现信息。"
+      ],
+      "forbidden": [
+        "不指定虚构失败步骤；请求测试文件、日志、评估结果和复现信息。"
+      ],
+      "gold_evidence": [],
+      "gold_status": "not_applicable",
+      "gold_notes": "边界题不绑定证据块；需要识别知识范围或私有运行材料缺失。",
+      "review_status": "keep"
+    },
+    {
+      "id": "V3-COV-01",
+      "domain": "coverage",
+      "type": "scenario",
+      "query_style": "多次运行",
+      "question": "多次仿真产生的覆盖率结果怎样累计，Current Run、Delta 和 Cumulative 分别表示什么？",
+      "expected_mode": "rag",
+      "expected_docs": [
+        "MathWorks Simulink Coverage User Guide R2024a"
+      ],
+      "expected_sections": [
+        "Access, Manage, and Aggregate Coverage Results"
+      ],
+      "must_cover": [
+        "区分当前、增量、累计结果，不声称默认永远累计。"
+      ],
+      "forbidden": [
+        "区分当前、增量、累计结果，不声称默认永远累计。"
+      ],
+      "gold_evidence": [
+        3211,
+        3226,
+        3227,
+        3474
+      ],
+      "gold_status": "annotated_source",
+      "gold_notes": "Source-first annotation from immutable evidence chunks: E:3211, E:3226, E:3227, E:3474.",
+      "review_status": "keep"
+    },
+    {
+      "id": "V3-COV-02",
+      "domain": "coverage",
+      "type": "scenario",
+      "query_style": "模型层级",
+      "question": "引用模型或可复用子系统出现多个实例时，覆盖率结果按实例还是聚合查看，有哪些限制？",
+      "expected_mode": "rag",
+      "expected_docs": [
+        "MathWorks Simulink Coverage User Guide R2024a"
+      ],
+      "expected_sections": [
+        "Model Coverage for Multiple Instances of a Referenced Model"
+      ],
+      "must_cover": [
+        "实例与聚合边界准确，不把一种配置说成唯一行为。"
+      ],
+      "forbidden": [
+        "实例与聚合边界准确，不把一种配置说成唯一行为。"
+      ],
+      "gold_evidence": [
+        3189,
+        3318,
+        3320,
+        3322,
+        3323
+      ],
+      "gold_status": "annotated_source",
+      "gold_notes": "Source-first annotation from immutable evidence chunks: E:3189, E:3318, E:3320, E:3322, E:3323.",
+      "review_status": "keep"
+    },
+    {
+      "id": "V3-COV-03",
+      "domain": "coverage",
+      "type": "scenario",
+      "query_style": "变体场景",
+      "question": "模型含有未激活 Variant 时，覆盖结果为什么可能看不到这些分支，相关选项怎样影响报告？",
+      "expected_mode": "rag",
+      "expected_docs": [
+        "MathWorks Simulink Coverage User Guide R2024a"
+      ],
+      "expected_sections": [
+        "Filter Inactive Variant Configurations"
+      ],
+      "must_cover": [
+        "解释 inactive variant 过滤及适用条件。"
+      ],
+      "forbidden": [
+        "不得超出原始证据或把限定条件泛化。"
+      ],
+      "gold_evidence": [
+        3210,
+        3426
+      ],
+      "gold_status": "annotated_source",
+      "gold_notes": "Source-first annotation from immutable evidence chunks: E:3210, E:3426.",
+      "review_status": "keep"
+    },
+    {
+      "id": "V3-COV-04",
+      "domain": "coverage",
+      "type": "procedure",
+      "query_style": "口语输出",
+      "question": "覆盖率跑完了，我想先在模型上看高亮，再导出完整报告，应该分别看哪里？",
+      "expected_mode": "rag",
+      "expected_docs": [
+        "MathWorks Simulink Coverage User Guide R2024a"
+      ],
+      "expected_sections": [
+        "View Coverage Results in Simulink Canvas",
+        "Types of Coverage Reports"
+      ],
+      "must_cover": [
+        "模型高亮和完整报告是不同输出；不得强制 Test Manager。"
+      ],
+      "forbidden": [
+        "模型高亮和完整报告是不同输出；不得强制 Test Manager。"
+      ],
+      "gold_evidence": [
+        3287,
+        3448,
+        3505
+      ],
+      "gold_status": "annotated_source",
+      "gold_notes": "Source-first annotation from immutable evidence chunks: E:3287, E:3448, E:3505.",
+      "review_status": "keep"
+    },
+    {
+      "id": "V3-COV-05",
+      "domain": "coverage",
+      "type": "boundary",
+      "query_style": "结论边界",
+      "question": "一个模型显示 100% MCDC，能否只凭这个结果断言整个项目已经满足全部安全认证要求？",
+      "expected_mode": "refusal",
+      "expected_docs": [],
+      "expected_sections": [],
+      "must_cover": [
+        "必须否定充分性；不编造认证结论，可说明还需要过程、需求、工具与其他证据。"
+      ],
+      "forbidden": [
+        "必须否定充分性；不编造认证结论，可说明还需要过程、需求、工具与其他证据。"
+      ],
+      "gold_evidence": [],
+      "gold_status": "not_applicable",
+      "gold_notes": "边界题不绑定证据块；需要识别知识范围或私有运行材料缺失。",
+      "review_status": "keep"
+    },
+    {
+      "id": "V3-X-01",
+      "domain": "cross_domain",
+      "type": "relationship",
+      "query_style": "Requirements × Test × Coverage",
+      "question": "从需求链接到测试用例，再到覆盖率结果，三者可以形成怎样的可追踪链条？",
+      "expected_mode": "rag",
+      "expected_docs": [
+        "MathWorks Simulink Test User Guide R2025a",
+        "MathWorks Simulink Coverage User Guide R2024a"
+      ],
+      "expected_sections": [
+        "Link Test Cases to Requirements",
+        "Trace Coverage Results to Requirements"
+      ],
+      "must_cover": [
+        "三层关系与工具许可边界；不能把覆盖率等同需求通过。"
+      ],
+      "forbidden": [
+        "三层关系与工具许可边界；不能把覆盖率等同需求通过。"
+      ],
+      "gold_evidence": [
+        2453,
+        2454,
+        2460,
+        2461,
+        3330,
+        3332
+      ],
+      "gold_status": "annotated_source",
+      "gold_notes": "Source-first annotation from immutable evidence chunks: E:2453, E:2454, E:2460, E:2461, E:3330, E:3332.",
+      "review_status": "keep"
+    },
+    {
+      "id": "V3-X-02",
+      "domain": "cross_domain",
+      "type": "relationship",
+      "query_style": "Stateflow × Test",
+      "question": "一个含 Stateflow chart 的组件放入 test harness 后，测试输入、chart 执行和结果评估之间是什么关系？",
+      "expected_mode": "rag",
+      "expected_docs": [
+        "MathWorks Stateflow User Guide",
+        "MathWorks Simulink Test User Guide R2025a"
+      ],
+      "expected_sections": [
+        "How Stateflow Objects Interact During Execution",
+        "Test Harness Construction",
+        "Test Assessments"
+      ],
+      "must_cover": [
+        "只回答文档共同支持的集成关系，避免推断具体 chart 行为。"
+      ],
+      "forbidden": [
+        "不得超出原始证据或把限定条件泛化。"
+      ],
+      "gold_evidence": [
+        1077,
+        1078,
+        2472,
+        2544,
+        2558
+      ],
+      "gold_status": "annotated_source",
+      "gold_notes": "Source-first annotation from immutable evidence chunks: E:1077, E:1078, E:2472, E:2544, E:2558.",
+      "review_status": "keep"
+    },
+    {
+      "id": "V3-X-03",
+      "domain": "cross_domain",
+      "type": "relationship",
+      "query_style": "AUTOSAR × Test",
+      "question": "导入的 AUTOSAR 组件模型能否直接放进 test harness 做 MIL 测试，还需要关注哪些接口或映射条件？",
+      "expected_mode": "rag",
+      "expected_docs": [
+        "AUTOSAR Blockset User Guide R2024a",
+        "MathWorks Simulink Test User Guide R2025a"
+      ],
+      "expected_sections": [
+        "Import AUTOSAR XML Descriptions",
+        "Test Harness Construction"
+      ],
+      "must_cover": [
+        "允许条件式回答；不能声称导入后无需配置即可测试。"
+      ],
+      "forbidden": [
+        "允许条件式回答；不能声称导入后无需配置即可测试。"
+      ],
+      "gold_evidence": [
+        210,
+        214,
+        274,
+        2472
+      ],
+      "gold_status": "annotated_source",
+      "gold_notes": "Source-first annotation from immutable evidence chunks: E:210, E:214, E:274, E:2472.",
+      "review_status": "keep"
+    },
+    {
+      "id": "V3-X-04",
+      "domain": "cross_domain",
+      "type": "relationship",
+      "query_style": "SIL/PIL × Coverage",
+      "question": "Normal、SIL、PIL 测试和模型覆盖率、代码覆盖率之间是什么关系，哪些结果不能混着解释？",
+      "expected_mode": "rag",
+      "expected_docs": [
+        "MathWorks Simulink Test User Guide R2025a",
+        "MathWorks Simulink Coverage User Guide R2024a"
+      ],
+      "expected_sections": [
+        "Back-to-Back Equivalence Testing",
+        "Model Objects That Receive Coverage"
+      ],
+      "must_cover": [
+        "明确模型覆盖与代码覆盖、不同执行模式；禁止把 SIL 说成模型覆盖的必要条件。"
+      ],
+      "forbidden": [
+        "明确模型覆盖与代码覆盖、不同执行模式；禁止把 SIL 说成模型覆盖的必要条件。"
+      ],
+      "gold_evidence": [
+        2743,
+        3189,
+        3318
+      ],
+      "gold_status": "annotated_source",
+      "gold_notes": "Source-first annotation from immutable evidence chunks: E:2743, E:3189, E:3318.",
+      "review_status": "keep"
+    },
+    {
+      "id": "V3-X-05",
+      "domain": "cross_domain",
+      "type": "boundary",
+      "query_style": "完全库外",
+      "question": "现有资料能不能告诉我 ROS 2 节点在某个私有机器人项目里的 DDS 丢包根因？",
+      "expected_mode": "refusal",
+      "expected_docs": [],
+      "expected_sections": [],
+      "must_cover": [
+        "识别知识库与私有运行材料双重缺失，不用 Simulink 通用资料猜测。"
+      ],
+      "forbidden": [
+        "识别知识库与私有运行材料双重缺失，不用 Simulink 通用资料猜测。"
+      ],
+      "gold_evidence": [],
+      "gold_status": "not_applicable",
+      "gold_notes": "边界题不绑定证据块；需要识别知识范围或私有运行材料缺失。",
+      "review_status": "keep"
+    }
+  ]
+}
+

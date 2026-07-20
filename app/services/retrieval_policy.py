@@ -6,6 +6,12 @@ from app.services.domains import preferred_domains
 from app.services.text import lexical_tokens
 
 
+LEXICAL_STOP_TOKENS = {
+    "what", "is", "are", "how", "why", "the", "a", "an", "of", "to", "in", "on", "and", "or",
+    "是什", "什么", "如何", "怎么", "怎样", "为何", "为什", "区别", "比较", "关系",
+}
+
+
 @dataclass(frozen=True)
 class RetrievalDecision:
     tier: int
@@ -19,7 +25,7 @@ def _token_set(value: str) -> set[str]:
     return {
         token
         for token in lexical_tokens((value or "")[:1800])[:256]
-        if len(token) >= 2
+        if len(token) >= 2 and token not in LEXICAL_STOP_TOKENS
     }
 
 
@@ -255,7 +261,7 @@ def assess_retrieval_confidence(
         tier, mode = 2, "lightweight"
     else:
         tier = 3
-        mode = "dense_fallback" if lexical_coverage < 0.20 else "rerank"
+        mode = "dense_fallback" if lexical_coverage <= 0.20 else "rerank"
     if not reasons:
         reasons.append("signals_consistent")
 

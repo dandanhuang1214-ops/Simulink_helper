@@ -13,6 +13,7 @@ from app.services.evidence_snippets import (
 )
 from app.services.ollama import OllamaClient
 from app.services.retrieval_pipeline import retrieve_evidence_with_coverage
+from app.services.text import lexical_tokens
 
 
 DOMAIN_TERMS = [
@@ -117,9 +118,63 @@ def _looks_like_copied_english_evidence(paragraph: str) -> bool:
     return letter_count >= 80 and len(chinese) < 12
 
 
-def ensure_evidence_citations(answer: str, evidence: list[dict], fallback_count: int = 3) -> tuple[str, list[dict]]:
+def _align_definition_sentence_citations(answer: str, evidence: list[dict]) -> str:
+    """Attach an already-selected source to an uncited definition sentence.
+
+    This is deliberately limited to short definition answers.  A citation is
+    only added when the sentence and evidence share at least two lexical
+    anchors, so the formatter does not manufacture support for unrelated text.
+    """
+    if not answer or not evidence:
+        return answer
+    # Small local models sometimes emit ``sentence。[E:n] next sentence``.
+    # Treat that citation as belonging to the sentence before the punctuation
+    # and normalize it before checking for missing sentence-level citations.
+    answer = re.sub(
+        r"([。！？])\s*((?:\[E:\d+\]\s*)+)",
+        lambda match: f" {match.group(2).strip()}{match.group(1)} ",
+        answer,
+    ).strip()
+    parts = re.split(r"(?<=[。！？])", answer)
+    aligned: list[str] = []
+    for part in parts:
+        if not part.strip() or re.search(r"\[E:\d+\]", part):
+            aligned.append(part)
+            continue
+        sentence_tokens = set(lexical_tokens(part))
+        best_item: dict | None = None
+        best_overlap = 0
+        for item in evidence:
+            evidence_tokens = set(lexical_tokens(
+                f"{item.get('title') or ''} {item.get('heading_path') or ''} {item.get('content') or ''}"
+            ))
+            overlap = len(sentence_tokens & evidence_tokens)
+            if overlap > best_overlap:
+                best_item, best_overlap = item, overlap
+        if best_item is None or best_overlap < 2:
+            aligned.append(part)
+            continue
+        body = part.rstrip()
+        trailing = part[len(body):]
+        if body and body[-1] in "。！？":
+            body = f"{body[:-1].rstrip()} [E:{best_item['chunk_id']}]{body[-1]}"
+        else:
+            body = f"{body} [E:{best_item['chunk_id']}]"
+        aligned.append(body + trailing)
+    return "".join(aligned)
+
+
+def ensure_evidence_citations(
+    answer: str,
+    evidence: list[dict],
+    fallback_count: int = 3,
+    *,
+    require_sentence_citations: bool = False,
+) -> tuple[str, list[dict]]:
     answer = _normalize_evidence_citation_marks(answer, evidence)
     answer = _drop_uncited_extra_paragraphs(answer)
+    if require_sentence_citations:
+        answer = _align_definition_sentence_citations(answer, evidence)
     citations = citation_dicts(answer, evidence)
     if citations or not evidence:
         return answer, citations
@@ -271,6 +326,7 @@ async def answer_question(question: str) -> dict:
     generation_tokens = answer_generation_budget(question)
     trace["generation_budget"] = generation_tokens
     answer = await ollama.generate(answer_prompt, num_predict=generation_tokens)
+    trace["generation_metrics"] = ollama.last_generation_metrics
     evaluation = await _judge(question, answer, context)
     scores = [
         evaluation.get(key, 0)
@@ -287,7 +343,11 @@ async def answer_question(question: str) -> dict:
         passed = bool(scores) and min(scores) >= settings.judge_threshold
     evaluation["passed"] = passed
 
-    answer, citations = ensure_evidence_citations(answer, evidence)
+    answer, citations = ensure_evidence_citations(
+        answer,
+        evidence,
+        require_sentence_citations=trace.get("prompt_compaction", {}).get("question_role") == "definition",
+    )
     with SessionLocal() as session:
         session.add(Evaluation(
             question=question,
@@ -310,10 +370,32 @@ def build_answer_prompt(
     memories: list[str],
     trace: dict | None = None,
 ) -> tuple[str, str]:
-    context, _compact_items, role = build_compact_context(question, evidence, trace=trace)
+    context, compact_items, role = build_compact_context(question, evidence, trace=trace)
     history_text = "\n".join(f"{item['role']}: {item['content']}" for item in history[-12:]) or "无"
     memory_text = "\n".join(f"- {item}" for item in memories) or "无"
-    contract = role_answer_contract(role)
+    contract = role_answer_contract(role, question)
+    aspect_bindings: list[str] = []
+    aspect_names = {
+        name
+        for item in compact_items
+        for name, score in (item.get("aspect_scores") or {}).items()
+        if float(score) >= 0.28
+    }
+    for name in sorted(aspect_names):
+        ranked = sorted(
+            (
+                (float(item.get("aspect_scores", {}).get(name, 0.0)), int(item.get("chunk_id")))
+                for item in compact_items
+                if float(item.get("aspect_scores", {}).get(name, 0.0)) >= 0.28
+            ),
+            reverse=True,
+        )
+        if ranked:
+            aspect_bindings.append(f"{name}=>[E:{ranked[0][1]}]")
+    binding_rule = (
+        "方面与首选证据对应：" + "；".join(aspect_bindings) + "。陈述该方面时优先引用对应证据。"
+        if aspect_bindings else ""
+    )
     prompt = f"""你是本地 Simulink / AUTOSAR / Stateflow 知识助手。用户用中文提问时，除英文技术名词、函数名和产品名外，必须用中文回答。
 硬性规则：
 1. 技术事实只能来自下面的证据。
@@ -325,6 +407,7 @@ def build_answer_prompt(
 7. 不要复制证据原文作为答案尾巴；只输出你整理后的最终回答。
 8. 只能引用本轮给出的证据块编号：{", ".join(str(item.get("chunk_id")) for item in evidence)}。不要输出页码样式引用，例如 [E:16-2]。
 9. 回答步骤题时，不要脑补按钮、菜单、弹窗或具体 UI 操作；只有证据明确写到时才可以描述。证据只支持概念流程时，就回答概念步骤。
+10. {binding_rule}
 
 用户偏好与项目上下文（不是技术证据）：
 {memory_text}

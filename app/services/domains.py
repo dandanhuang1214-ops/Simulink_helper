@@ -42,9 +42,17 @@ DOMAIN_REGISTRY: dict[str, DomainSpec] = {
     "testing": DomainSpec(
         keywords=(
             "mil", "sil", "pil", "hil", "test", "verify", "verification",
-            "coverage", "requirements", "测试", "验证", "覆盖率", "需求",
+            "requirements", "测试", "验证", "需求",
         ),
         title_keywords=("mil", "sil", "pil", "test", "verify", "测试", "验证"),
+    ),
+    "coverage": DomainSpec(
+        keywords=(
+            "coverage", "coverage report", "coverage results", "coverage analyzer",
+            "cvdata", "mcdc", "decision coverage", "condition coverage",
+            "覆盖率", "覆盖报告", "覆盖数据", "覆盖分析",
+        ),
+        title_keywords=("coverage", "覆盖率"),
     ),
     "codegen": DomainSpec(
         keywords=(

@@ -1,0 +1,16 @@
+{
+  "evaluation_file": "docs/evaluation/EVAL_REGRESSION_V3.json",
+  "version": "3.0",
+  "status": "frozen_v3_holdout",
+  "sha256": "bded80c0c594d73c0d9b763397e31f7648d24b11a884fdbeb6a22e9b161f94e7",
+  "cases": 30,
+  "rag_cases": 24,
+  "refusal_cases": 6,
+  "unique_gold_evidence": 76,
+  "annotation_policy": "source_first_no_retrieval_labels",
+  "allowed_runs": {
+    "before_refactor": "one blind baseline",
+    "after_refactor": "one formal acceptance"
+  },
+  "contamination_rule": "If implementation is tuned using v3 results, v3 becomes a development set and a new v4 holdout is required."
+}

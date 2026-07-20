@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import asyncio
 import json
-import re
 from time import perf_counter
 from pathlib import Path
 
@@ -29,6 +28,7 @@ from app.services.qa import (
     ensure_evidence_citations,
     judge_answer,
 )
+from app.services.query_context import contextualize_retrieval_query
 from app.services.retrieval import hybrid_search
 from app.services.retrieval_pipeline import retrieve_evidence_with_coverage
 from app.services.storage import ensure_storage, raw_path, sha256_bytes, write_immutable
@@ -301,6 +301,11 @@ def delete_conversation(conversation_id: int) -> dict:
         row = session.get(Conversation, conversation_id)
         if not row:
             raise HTTPException(404, "会话不存在")
+        message_ids = [message.id for message in row.messages]
+        if message_ids:
+            session.query(MemoryItem).filter(MemoryItem.source_message_id.in_(message_ids)).update(
+                {MemoryItem.source_message_id: None}, synchronize_session=False
+            )
         session.delete(row)
         session.commit()
         return {"deleted": True}
@@ -329,6 +334,8 @@ async def conversation_message_stream(conversation_id: int, request: Conversatio
 
     async def events():
         started = perf_counter()
+        answer_parts: list[str] = []
+        trace: dict = {}
         yield _sse("message.created", {"user_message_id": user_message_id, "assistant_message_id": assistant_id})
         direct = conversational_reply(request.content)
         if direct:
@@ -343,16 +350,19 @@ async def conversation_message_stream(conversation_id: int, request: Conversatio
             yield _sse("done", {})
             return
 
-        trace: dict = {}
         history = recent_context(conversation_id, user_message_id, turns=6)
-        use_rewrite = bool(history) and bool(re.search(r"(它|这个|上述|前面|该|其|那个)", request.content))
+        retrieval_question, contextualized = contextualize_retrieval_query(request.content, history)
         try:
             yield _sse("stage.started", {"stage": "retrieval", "label": "正在检索知识库"})
             retrieval_started = perf_counter()
             retrieval = await retrieve_evidence_with_coverage(
-                request.content, use_rewrite=use_rewrite, use_rerank=True,
+                retrieval_question, use_rewrite=False, use_rerank=True,
                 document_ids=source_filter.get("document_ids"), releases=source_filter.get("releases"), trace=trace,
             )
+            trace["contextualized_query"] = {
+                "used": contextualized,
+                "retrieval_query": retrieval_question if contextualized else request.content,
+            }
             candidates = retrieval.candidates
             evidence = retrieval.evidence
             yield _sse("stage.completed", {
@@ -405,16 +415,21 @@ async def conversation_message_stream(conversation_id: int, request: Conversatio
 
             prompt, context = build_answer_prompt(request.content, evidence, history, active_memories(), trace=trace)
             yield _sse("stage.started", {"stage": "generation", "label": "正在生成证据式回答"})
-            answer_parts: list[str] = []
             generation_started = perf_counter()
             generation_tokens = answer_generation_budget(request.content)
             trace["generation_budget"] = generation_tokens
-            async for token in OllamaClient().generate_stream(prompt, num_predict=generation_tokens):
+            ollama = OllamaClient()
+            async for token in ollama.generate_stream(prompt, num_predict=generation_tokens):
                 answer_parts.append(token)
                 yield _sse("answer.delta", {"message_id": assistant_id, "delta": token})
             answer = "".join(answer_parts).strip()
             trace["generation_ms"] = round((perf_counter() - generation_started) * 1000)
-            answer, citations = ensure_evidence_citations(answer, evidence)
+            trace["generation_metrics"] = ollama.last_generation_metrics
+            answer, citations = ensure_evidence_citations(
+                answer,
+                evidence,
+                require_sentence_citations=trace.get("prompt_compaction", {}).get("question_role") == "definition",
+            )
             with SessionLocal() as session:
                 row = session.get(Message, assistant_id)
                 row.content, row.status = answer, "completed"
@@ -438,14 +453,25 @@ async def conversation_message_stream(conversation_id: int, request: Conversatio
             with SessionLocal() as session:
                 row = session.get(Message, assistant_id)
                 if row:
+                    partial_answer = "".join(answer_parts).strip()
+                    if partial_answer:
+                        row.content = partial_answer
                     row.status = "cancelled"
+                    row.error = "Generation cancelled or client disconnected"
+                    row.retrieval_trace_json = json.dumps(trace, ensure_ascii=False)
+                    row.latency_ms = round((perf_counter() - started) * 1000)
                     session.commit()
             raise
         except Exception as exc:
             with SessionLocal() as session:
                 row = session.get(Message, assistant_id)
                 if row:
+                    partial_answer = "".join(answer_parts).strip()
+                    if partial_answer:
+                        row.content = partial_answer
                     row.status, row.error = "failed", f"{type(exc).__name__}: {exc}"
+                    row.retrieval_trace_json = json.dumps(trace, ensure_ascii=False)
+                    row.latency_ms = round((perf_counter() - started) * 1000)
                     session.commit()
             yield _sse("error", {"message_id": assistant_id, "message": f"问答链路失败: {type(exc).__name__}: {exc}"})
             yield _sse("done", {})

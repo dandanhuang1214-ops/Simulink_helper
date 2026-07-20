@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import re
 from collections import defaultdict
+from dataclasses import dataclass
 from time import perf_counter
 
 from qdrant_client import QdrantClient
@@ -11,7 +12,9 @@ from app.config import get_settings
 from app.database import Document, EvidenceChunk, SessionLocal, WikiPage
 from app.services.domains import document_domains, domain_boost, preferred_domains
 from app.services.graph_retrieval import graph_candidate_scores
+from app.services.evidence_selector import question_roles
 from app.services.ollama import OllamaClient
+from app.services.question_aspects import aspect_query_facets
 from app.services.retrieval_policy import assess_retrieval_confidence, diversify_candidates
 from app.services.text import lexical_tokens
 
@@ -19,17 +22,49 @@ from app.services.text import lexical_tokens
 WIKI_CITATION_RE = re.compile(r"\[E:(\d+)\]")
 
 
+GENERIC_PRODUCT_IDENTIFIERS = {
+    "autosar", "coverage", "embedded", "mathworks", "simulink", "stateflow",
+}
+
+
 DOMAIN_QUERY_EXPANSIONS = [
+    (
+        ("mcdc", "modified condition/decision", "modified condition and decision"),
+        "MCDC modified condition decision coverage condition independence independently affects decision outcome full coverage",
+    ),
     (("stateflow", "状态机", "状态流"), "Stateflow chart finite state machine state transition event action Simulink"),
     (("chart", "图表", "状态图"), "Stateflow chart state transition diagram"),
     (("transition", "转移", "转换"), "transition state event condition action Stateflow"),
     (("event", "事件"), "event broadcast chart execution Stateflow"),
     (("truth table", "真值表"), "truth table decision logic Stateflow"),
+    (
+        ("覆盖率", "覆盖数据", "覆盖报告", "coverage report", "collect coverage", "coverage results"),
+        "Simulink Coverage model coverage report cvhtml cvdata cvdatagroup Generate Results for Models collect data Run Coverage Analyzer Results Explorer",
+    ),
+    (
+        ("runnable", "可运行实体", "可运行单元"),
+        "AUTOSAR runnable executable entity entry-point function code mapping events ports data access IRV configure runnable",
+    ),
+    (
+        ("需求链接", "链接到需求", "需求追踪", "requirements traceability", "link to requirements"),
+        "Simulink Test Link to Requirements Establish Requirements Traceability test case Test Sequence step current test case harness rebuild limitations",
+    ),
     (("autosar", "arxml"), "AUTOSAR component composition ARXML Simulink"),
     (("xml", "arxml", "导入"), "Import AUTOSAR XML Descriptions Into Simulink ARXML Importer createComponentAsModel createCompositionAsModel updateModel shared descriptions"),
     (("simulink", "仿真"), "Simulink model simulation block signal subsystem"),
+    (
+        ("空白模型", "创建模型", "运行仿真", "run simulation", "create a simple model"),
+        "Create a Simple Model blank model add blocks connect blocks edit parameters Run a Simulation View Simulation Results",
+    ),
     (("求解器", "solver", "步长"), "solver fixed-step variable-step simulation Simulink"),
 ]
+
+
+@dataclass(frozen=True)
+class QueryVariant:
+    text: str
+    weight: float
+    source: str
 
 
 def _fts_query(value: str) -> str:
@@ -42,7 +77,18 @@ def _domain_expanded_queries(query: str) -> list[str]:
     values = [query]
     for triggers, expansion in DOMAIN_QUERY_EXPANSIONS:
         if any(trigger.lower() in lowered for trigger in triggers):
-            values.append(f"{query} {expansion}")
+            # The original query is already the first variant. Keeping it in
+            # every expansion lets long Chinese bigrams consume the FTS token
+            # budget before any English manual term is reached.
+            # FTS deliberately caps each OR query at 12 tokens. Split longer
+            # domain expansions into bounded facets so late terms such as
+            # "model coverage report" or "View Simulation Results" are not
+            # silently discarded before retrieval.
+            expansion_tokens = lexical_tokens(expansion)
+            values.extend(
+                " ".join(expansion_tokens[index:index + 12])
+                for index in range(0, len(expansion_tokens), 12)
+            )
     seen: set[str] = set()
     unique: list[str] = []
     for value in values:
@@ -50,6 +96,73 @@ def _domain_expanded_queries(query: str) -> list[str]:
             seen.add(value)
             unique.append(value)
     return unique
+
+
+def _blend_query(original: str, expansion: str) -> str:
+    """Reserve room for user terms while adding cross-language manual terms.
+
+    FTS queries are capped at 12 tokens. Expansion-only queries can lose a
+    multi-intent user's wording, while concatenating the full Chinese question
+    can consume the whole budget before English manual terms are reached.
+    A balanced 6+6 facet preserves both sides deterministically.
+    """
+    raw_original_tokens = lexical_tokens(original)
+    ascii_technical = [
+        token for token in raw_original_tokens
+        if re.fullmatch(r"[a-z0-9_.:+/-]+", token) and len(token) >= 2
+    ]
+    cjk_content = [
+        token for token in raw_original_tokens
+        if re.fullmatch(r"[\u4e00-\u9fff]{2,}", token)
+        and not any(char in token for char in "的和与及在到里中呢吗啊么怎样请将把分别各自什么")
+    ]
+    # Technical identifiers are sparse and must survive. Fill the remaining
+    # anchor budget with meaningful CJK bigrams, not boundary bigrams such as
+    # “件的” or question wording such as “怎样”.
+    original_tokens = list(dict.fromkeys([*ascii_technical, *cjk_content]))[:6]
+    expansion_tokens = [token for token in lexical_tokens(expansion) if token not in original_tokens][:6]
+    return " ".join([*original_tokens, *expansion_tokens])
+
+
+def _weighted_query_plan(query: str, rewritten: list[str] | None = None) -> list[QueryVariant]:
+    """Build a bounded, weighted multi-facet retrieval plan.
+
+    The original question always has the strongest vote. Rewrites and domain
+    facets may broaden recall, but cannot outvote the user's terms merely
+    because several expansion rules fired.
+    """
+    plan = [QueryVariant(query, 1.0, "original")]
+    for value in (rewritten or [])[1:3]:
+        value = value.strip()
+        if value and value != query:
+            plan.append(QueryVariant(value, 0.80, "rewrite"))
+
+    aspect_values = aspect_query_facets(query)
+    expansion_values = _domain_expanded_queries(query)[1:]
+    query_domains = preferred_domains(query)
+    max_variants = 5 if len(query_domains) >= 2 else 4
+    for aspect in aspect_values:
+        if all(item.text != aspect for item in plan):
+            plan.append(QueryVariant(aspect, 0.55, "aspect_facet"))
+        if len(plan) >= max_variants:
+            return plan[:max_variants]
+    # Keep complete manual-heading facets: splitting them into a 6+6 blend can
+    # drop the discriminative tail (for example "Generate Coverage Results for
+    # Models"). Their vote remains below the original question.
+    expansion_limit = max_variants - 1 if expansion_values and len(plan) < max_variants else max_variants
+    for expansion in expansion_values:
+        if all(item.text != expansion for item in plan):
+            plan.append(QueryVariant(expansion, 0.45, "domain_facet"))
+        if len(plan) >= expansion_limit:
+            break
+    # One balanced facet repeats the user's technical anchors alongside the
+    # strongest expansion. This protects multi-intent questions without
+    # multiplying the original query once per triggered rule.
+    if expansion_values and len(plan) < max_variants:
+        blended = _blend_query(query, expansion_values[0])
+        if blended and all(item.text != blended for item in plan):
+            plan.append(QueryVariant(blended, 0.30, "blended_facet"))
+    return plan[:max_variants]
 
 
 def _is_simple_relation_query(query: str) -> bool:
@@ -62,11 +175,43 @@ def _is_simple_relation_query(query: str) -> bool:
     return simple_relation and not procedural_or_compare
 
 
+def _is_procedural_query(query: str) -> bool:
+    lowered = query.casefold()
+    return any(cue in lowered for cue in (
+        "how", "steps", "workflow", "process", "怎么", "怎样", "如何", "步骤", "流程",
+        "操作顺序", "接下来", "先后",
+        "创建", "导入", "配置", "映射", "运行", "收集", "生成报告",
+    ))
+
+
+def _should_use_wiki(query: str, query_domains: set[str]) -> tuple[bool, str]:
+    roles = question_roles(query, query_domains)
+    if roles & {"definition", "relationship", "comparison"}:
+        return True, "concept_or_relationship"
+    if roles == {"general"}:
+        return True, "general_overview"
+    return False, "focused_procedure_prefers_raw_evidence"
+
+
+def _should_use_graph(query: str, query_domains: set[str]) -> tuple[bool, str]:
+    roles = question_roles(query, query_domains)
+    if roles & {"relationship", "comparison"}:
+        return True, "relationship_or_comparison"
+    multi_hop_cues = ("依赖", "影响", "关联", "连接", "映射", "链路", "between", "depends", "impact")
+    if any(cue in query.casefold() for cue in multi_hop_cues):
+        return True, "explicit_multi_hop_cue"
+    return False, "simple_query_no_graph_expansion"
+
+
 def _dense_skip_reason(query: str, scores: dict[int, float], limit: int) -> str | None:
     lowered = query.lower()
     technical_identifiers = re.findall(r"\b[A-Za-z_][A-Za-z0-9_]{5,}\b", query)
     has_exact_identifier = any(
-        "_" in value or (any(char.islower() for char in value) and any(char.isupper() for char in value))
+        value.casefold() not in GENERIC_PRODUCT_IDENTIFIERS
+        and (
+            "_" in value
+            or (any(char.islower() for char in value) and any(char.isupper() for char in value[1:]))
+        )
         for value in technical_identifiers
     )
     if has_exact_identifier and len(scores) >= min(4, limit):
@@ -111,6 +256,32 @@ def _is_likely_toc_chunk(content: str, heading_path: str, page: int | None) -> b
     if not heading_path and lowered.startswith("contents "):
         return True
     return dot_runs >= 3 or page_refs >= 8 or on_page_refs >= 5
+
+
+def _is_graph_led_channels(channels: set[str]) -> bool:
+    """Graph/Wiki expansion is indirect until BM25 or Dense also agrees."""
+    return "graph" in channels and not ({"bm25", "dense"} & channels)
+
+
+EXPANSION_HEADING_STOPWORDS = {
+    "autosar", "block", "blocks", "coverage", "data", "for", "model", "models",
+    "simulink", "stateflow", "the", "using", "with",
+}
+
+
+def _expansion_heading_boost(queries: list[str], candidate: dict) -> float:
+    if len(queries) <= 1:
+        return 0.0
+    expansion_terms = {
+        token for query in queries[1:] for token in lexical_tokens(query)
+        if len(token) >= 4
+        and re.fullmatch(r"[a-z0-9_.:+/-]+", token)
+        and token not in EXPANSION_HEADING_STOPWORDS
+    }
+    heading_terms = set(lexical_tokens(
+        f"{candidate.get('title') or ''} {candidate.get('heading_path') or ''}"
+    ))
+    return min(0.060, len(expansion_terms & heading_terms) * 0.008)
 
 
 def _concept_boost(query: str, candidate: dict) -> float:
@@ -162,6 +333,7 @@ def _collect_bm25(
     allowed_documents: set[int] | None,
     scores: dict[int, float],
     channels: dict[int, set[str]],
+    weight: float = 1.0,
 ) -> None:
     fts = _fts_query(variant)
     if not fts:
@@ -182,7 +354,7 @@ def _collect_bm25(
         chunk_id = int(row.chunk_id)
         if allowed_documents is not None and doc_by_chunk.get(chunk_id) not in allowed_documents:
             continue
-        scores[chunk_id] += 1 / (60 + rank + 1)
+        scores[chunk_id] += weight / (60 + rank + 1)
         channels[chunk_id].add("bm25")
 
 
@@ -199,6 +371,7 @@ def _collect_wiki(
     scores: dict[int, float],
     channels: dict[int, set[str]],
     metadata: dict[int, dict],
+    weight: float = 1.0,
 ) -> dict:
     fts = _fts_query(variant)
     if not fts:
@@ -244,7 +417,7 @@ def _collect_wiki(
             continue
         best_page_rank = min(ref["rank"] for ref in refs)
         best_local_rank = min(ref["local_rank"] for ref in refs)
-        scores[chunk_id] += 1 / (70 + best_page_rank + best_local_rank)
+        scores[chunk_id] += weight / (70 + best_page_rank + best_local_rank)
         channels[chunk_id].add("wiki")
         metadata[chunk_id].setdefault("wiki_refs", [])
         existing = {
@@ -303,11 +476,9 @@ async def hybrid_search(
                 documents = documents.filter(Document.release.in_(releases))
             allowed_documents = {int(row.id) for row in documents.all()}
 
-    queries = await rewrite_query(query) if use_rewrite else [query]
-    for expanded in _domain_expanded_queries(query):
-        if expanded not in queries:
-            queries.append(expanded)
-    queries = queries[:2] if _is_simple_relation_query(query) else queries[:4]
+    rewritten = await rewrite_query(query) if use_rewrite else [query]
+    query_plan = _weighted_query_plan(query, rewritten)
+    queries = [item.text for item in query_plan]
 
     rewrite_ms = round((perf_counter() - started) * 1000)
     ollama = OllamaClient()
@@ -320,30 +491,39 @@ async def hybrid_search(
     wiki_ms = 0
     wiki_trace: list[dict] = []
     graph_ms = 0
-    graph_trace = {"enabled": settings.graph_retrieval_enabled, "used": False, "reason": "disabled"}
+    wiki_enabled, wiki_reason = _should_use_wiki(query, query_domains)
+    graph_query_enabled, graph_reason = _should_use_graph(query, query_domains)
+    graph_trace = {
+        "enabled": settings.graph_retrieval_enabled,
+        "used": False,
+        "reason": graph_reason if settings.graph_retrieval_enabled else "disabled",
+    }
 
-    for variant in queries:
+    for variant in query_plan:
         bm25_started = perf_counter()
         _collect_bm25(
-            variant,
-            limit=settings.retrieval_top_k,
+            variant.text,
+            limit=max(settings.retrieval_top_k, 30) if _is_procedural_query(query) else settings.retrieval_top_k,
             allowed_documents=allowed_documents,
             scores=scores,
             channels=channels,
+            weight=variant.weight,
         )
         bm25_ms += round((perf_counter() - bm25_started) * 1000)
-        wiki_started = perf_counter()
-        wiki_result = _collect_wiki(
-            variant,
-            limit=8,
-            allowed_documents=allowed_documents,
-            scores=scores,
-            channels=channels,
-            metadata=metadata,
-        )
-        wiki_ms += round((perf_counter() - wiki_started) * 1000)
-        if wiki_result.get("pages") or wiki_result.get("evidence_count"):
-            wiki_trace.append({"query": variant, **wiki_result})
+        if wiki_enabled:
+            wiki_started = perf_counter()
+            wiki_result = _collect_wiki(
+                variant.text,
+                limit=8,
+                allowed_documents=allowed_documents,
+                scores=scores,
+                channels=channels,
+                metadata=metadata,
+                weight=variant.weight,
+            )
+            wiki_ms += round((perf_counter() - wiki_started) * 1000)
+            if wiki_result.get("pages") or wiki_result.get("evidence_count"):
+                wiki_trace.append({"query": variant.text, "weight": variant.weight, "source": variant.source, **wiki_result})
 
     dense_fast_path_enabled = settings.dense_fast_path_enabled and profile == "fast"
     dense_skip_reason = _dense_skip_reason(query, scores, limit) if dense_fast_path_enabled else None
@@ -353,7 +533,7 @@ async def hybrid_search(
         vectors = await ollama.embed(queries)
         dense_ms += round((perf_counter() - dense_started) * 1000)
 
-        for vector in vectors:
+        for variant, vector in zip(query_plan, vectors, strict=True):
             dense = qdrant.query_points(
                 settings.qdrant_collection,
                 query=vector,
@@ -364,10 +544,10 @@ async def hybrid_search(
                 if allowed_documents is not None and int(hit.payload["document_id"]) not in allowed_documents:
                     continue
                 chunk_id = int(hit.payload["chunk_id"])
-                scores[chunk_id] += 1 / (60 + rank + 1)
+                scores[chunk_id] += variant.weight / (60 + rank + 1)
                 channels[chunk_id].add("dense")
 
-    if settings.graph_retrieval_enabled and scores:
+    if settings.graph_retrieval_enabled and graph_query_enabled and scores:
         graph_started = perf_counter()
         seed_ids = [
             item[0]
@@ -393,6 +573,7 @@ async def hybrid_search(
         if trace is not None:
             trace.update({
                 "queries": queries,
+                "query_plan": [item.__dict__ for item in query_plan],
                 "retrieval_profile": profile,
                 "preferred_domains": sorted(query_domains),
                 "rewrite_ms": rewrite_ms,
@@ -401,6 +582,8 @@ async def hybrid_search(
                 "bm25_ms": bm25_ms,
                 "wiki_ms": wiki_ms,
                 "wiki": wiki_trace,
+                "wiki_enabled": wiki_enabled,
+                "wiki_reason": wiki_reason,
                 "graph_ms": graph_ms,
                 "graph": graph_trace,
                 "dense_skipped": dense_skipped,
@@ -445,7 +628,7 @@ async def hybrid_search(
     for item in candidates:
         doc_domain_set = set(item["document_domains"])
         channel_set = set(item.get("channels", []))
-        graph_only = channel_set == {"graph"}
+        graph_only = _is_graph_led_channels(channel_set)
         item["concept_boost"] = 0.0 if graph_only else _concept_boost(query, item)
         item["domain_boost"] = min(domain_boost(query_domains, doc_domain_set), 0.01) if graph_only else domain_boost(query_domains, doc_domain_set)
         if graph_only:
@@ -461,7 +644,9 @@ async def hybrid_search(
             + item["concept_boost"]
             + item["domain_boost"]
             + item["channel_prior"]
+            + _expansion_heading_boost(queries, item)
         )
+        item["expansion_heading_boost"] = _expansion_heading_boost(queries, item)
     candidates.sort(key=lambda item: item["final_score"], reverse=True)
     candidates, diversity_trace = diversify_candidates(candidates, limit=len(candidates))
     decision = assess_retrieval_confidence(
@@ -524,6 +709,7 @@ async def hybrid_search(
     if trace is not None:
         trace.update({
             "queries": queries,
+            "query_plan": [item.__dict__ for item in query_plan],
             "retrieval_profile": profile,
             "preferred_domains": sorted(query_domains),
             "rewrite_ms": rewrite_ms,
@@ -532,6 +718,8 @@ async def hybrid_search(
             "bm25_ms": bm25_ms,
             "wiki_ms": wiki_ms,
             "wiki": wiki_trace,
+            "wiki_enabled": wiki_enabled,
+            "wiki_reason": wiki_reason,
             "graph_ms": graph_ms,
             "graph": graph_trace,
             "dense_skipped": dense_skipped,
@@ -557,6 +745,7 @@ async def hybrid_search(
                     "concept_boost": item.get("concept_boost", 0.0),
                     "domain_boost": item.get("domain_boost", 0.0),
                     "channel_prior": item.get("channel_prior", 0.0),
+                    "expansion_heading_boost": item.get("expansion_heading_boost", 0.0),
                     "document_domains": item.get("document_domains", []),
                     "channels": item["channels"],
                     "wiki_refs": item.get("wiki_refs", []),
