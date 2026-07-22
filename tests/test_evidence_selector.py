@@ -35,6 +35,7 @@ def test_workflow_requests_stage_diversity_but_single_action_does_not() -> None:
     assert _requested_procedure_stages("如何收集覆盖率数据并生成报告？") == ["execute", "report"]
 from app.services.evidence_snippets import _snippet_for_item, answer_generation_budget, select_prompt_evidence
 from app.services.coverage import assess_evidence_coverage
+from app.services.question_aspects import requested_aspects
 
 
 def _candidate(
@@ -349,3 +350,55 @@ def test_harness_definition_sync_and_management_are_all_covered() -> None:
     assert {item["chunk_id"] for item in selected} == {101, 102, 103}
     assert result.passed is True
     assert answer_generation_budget(question) == 420
+
+
+def test_compound_assessment_question_has_two_general_domain_aspects() -> None:
+    names = {
+        item.name
+        for item in requested_aspects(
+            "Test Assessment 和基线比较分别解决什么问题，可以同时使用吗？"
+        )
+    }
+    assert names == {"runtime_assessment", "baseline_comparison"}
+
+
+def test_multiple_instance_coverage_uses_instance_aspect() -> None:
+    names = {
+        item.name
+        for item in requested_aspects(
+            "引用模型出现多个实例时，覆盖率按实例还是聚合查看？"
+        )
+    }
+    assert "instance_coverage" in names
+
+
+def test_aspect_selector_keeps_assessment_and_baseline_evidence() -> None:
+    candidates = [
+        _candidate(
+            110,
+            "MIL Methodology / Baseline Signal Design",
+            "Design input signals for a model-in-the-loop test.",
+            document_id=1,
+            score=0.20,
+        ),
+        _candidate(
+            111,
+            "Run-Time Assessments / Test Assessment Block",
+            "The Test Assessment block uses verify statements during simulation.",
+            document_id=2,
+            score=0.08,
+        ),
+        _candidate(
+            112,
+            "Baseline Criteria / Compare Simulation Data to Baseline Data",
+            "A baseline test compares logged output data with baseline data and tolerances.",
+            document_id=2,
+            score=0.07,
+        ),
+    ]
+    question = "Test Assessment 和基线比较分别解决什么问题，可以同时使用吗？"
+    selected = select_evidence(question, candidates, final_limit=2)
+    result = assess_evidence_coverage(question, selected)
+
+    assert {item["chunk_id"] for item in selected} == {111, 112}
+    assert result.passed is True

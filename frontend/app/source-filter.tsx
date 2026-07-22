@@ -1,7 +1,7 @@
 "use client";
 
 type Conversation = { source_filter?: { document_ids?: number[]; releases?: string[] } };
-type Document = { id: number; title: string; status: string; release?: string };
+type Document = { id: number; title: string; status: string; enabled: boolean; release?: string };
 type Filter = { document_ids?: number[]; releases?: string[] };
 
 export default function SourceFilter({current, documents, onChange}:{
@@ -10,7 +10,8 @@ export default function SourceFilter({current, documents, onChange}:{
   onChange: (filter: Filter) => Promise<void>;
 }) {
   const filter = current?.source_filter || {};
-  const releases = Array.from(new Set(documents.map(item => item.release).filter(Boolean))) as string[];
+  const activeDocuments = documents.filter(item => item.enabled !== false && item.status === "ready");
+  const releases = Array.from(new Set(activeDocuments.map(item => item.release).filter(Boolean))) as string[];
   const count = (filter.document_ids?.length || 0) + (filter.releases?.length || 0);
   const toggle = (key: keyof Filter, value: number | string, checked: boolean) => {
     const old = (filter[key] || []) as (number | string)[];
@@ -26,7 +27,7 @@ export default function SourceFilter({current, documents, onChange}:{
         <label key={release}><input type="checkbox" checked={filter.releases?.includes(release) || false}
           onChange={event => toggle("releases", release, event.target.checked)}/><span>{release}</span></label>
       )}</fieldset>}
-      <fieldset><legend>文档</legend>{documents.filter(item => item.status === "ready").map(item =>
+      <fieldset><legend>文档</legend>{activeDocuments.map(item =>
         <label key={item.id}><input type="checkbox" checked={filter.document_ids?.includes(item.id) || false}
           onChange={event => toggle("document_ids", item.id, event.target.checked)}/><span>{item.title}</span><small>{item.release || "未标注版本"}</small></label>
       )}</fieldset>

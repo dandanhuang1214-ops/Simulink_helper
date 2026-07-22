@@ -34,6 +34,7 @@ type DocumentRow = {
   id: number;
   title: string;
   status: string;
+  enabled: boolean;
   filename: string;
   release?: string;
   parse_mode?: string;
@@ -99,7 +100,10 @@ type WikiContext = {
 };
 
 function citationMarkdown(value: string) {
-  return value.replace(/\[E:(\d+)\]/g, "[E:$1](evidence:$1)");
+  return value
+    .replace(/\[E:(\d+)\]\(file:[^\r\n)]*(?:\)|$)/gm, "[E:$1](evidence:$1)")
+    .replace(/\[E:(\d+)\]\([^\r\n)]*\)/g, "[E:$1](evidence:$1)")
+    .replace(/\[E:(\d+)\](?!\()/g, "[E:$1](evidence:$1)");
 }
 
 function stageText(stage?: string) {
@@ -224,7 +228,6 @@ export default function Home() {
     const cached = evidence.find((item) => item.chunk_id === chunkId);
     if (cached) {
       setChosen(cached);
-      return;
     }
     const response = await fetch(`${API}/api/evidence/${chunkId}`);
     if (response.ok) {
@@ -1039,6 +1042,28 @@ export default function Home() {
                 {scoreText(chosen.rrf_score) && <span>RRF {scoreText(chosen.rrf_score)}</span>}
               </div>
               {chosen.heading_path && <small>{chosen.heading_path}</small>}
+              {(chosen.neighbors?.previous || chosen.neighbors?.next) && (
+                <nav className="evidence-chain" aria-label="同一文档中的相邻证据块">
+                  <button
+                    type="button"
+                    disabled={!chosen.neighbors?.previous}
+                    onClick={() => chosen.neighbors?.previous && openEvidence(chosen.neighbors.previous.chunk_id)}
+                  >
+                    <span>← 上一块</span>
+                    <b>{chosen.neighbors?.previous ? `E:${chosen.neighbors.previous.chunk_id}` : "文档起点"}</b>
+                    <small>{chosen.neighbors?.previous?.heading_path || ""}</small>
+                  </button>
+                  <button
+                    type="button"
+                    disabled={!chosen.neighbors?.next}
+                    onClick={() => chosen.neighbors?.next && openEvidence(chosen.neighbors.next.chunk_id)}
+                  >
+                    <span>下一块 →</span>
+                    <b>{chosen.neighbors?.next ? `E:${chosen.neighbors.next.chunk_id}` : "文档终点"}</b>
+                    <small>{chosen.neighbors?.next?.heading_path || ""}</small>
+                  </button>
+                </nav>
+              )}
               <p>{chosen.content}</p>
             </article>
             {chosen.page && <img src={`${API}/api/sources/${chosen.document_id}/pages/${chosen.page}`} alt="source page" />}
@@ -2116,6 +2141,7 @@ function DocumentCard({ document, onDone }: { document: DocumentRow; onDone: () 
   const [note, setNote] = useState("");
   const isActive = ["queued", "processing"].includes(document.status);
   const isFailed = document.status === "failed";
+  const isDisabled = document.enabled === false;
 
   async function pollJob(jobId: number) {
     for (let i = 0; i < 120; i++) {
@@ -2149,10 +2175,10 @@ function DocumentCard({ document, onDone }: { document: DocumentRow; onDone: () 
   }
 
   return (
-    <article className={`doc-card doc-${document.status}`}>
+    <article className={`doc-card doc-${document.status}${isDisabled ? " doc-disabled" : ""}`}>
       <div className="doc-card-head">
         <b>{document.title}</b>
-        <span>{statusLabel(document.status)}</span>
+        <span>{isDisabled ? "已停用" : statusLabel(document.status)}</span>
       </div>
       <p>{document.filename}</p>
       <small>
@@ -2163,7 +2189,7 @@ function DocumentCard({ document, onDone }: { document: DocumentRow; onDone: () 
       {note && <small className="doc-note">{note}</small>}
       <div className="doc-actions">
         <button onClick={onDone}>刷新</button>
-        {(isFailed || document.status === "ready") && <button onClick={reindex}>{isFailed ? "重试" : "重建"}</button>}
+        {!isDisabled && (isFailed || document.status === "ready") && <button onClick={reindex}>{isFailed ? "重试" : "重建"}</button>}
         {isActive && <button onClick={onDone}>更新状态</button>}
       </div>
     </article>

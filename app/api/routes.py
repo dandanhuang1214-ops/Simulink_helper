@@ -12,12 +12,13 @@ from app.config import get_settings
 from app.database import Conversation, Document, Evaluation, EvidenceChunk, ImportJob, MemoryItem, Message, SessionLocal, WikiPage
 from app.schemas import (
     ChatRequest, ConversationCreate, ConversationMessageRequest, ConversationUpdate, DocumentRead,
-    JobRead, MemoryUpdate, MessageFeedbackRequest, ReviewRequest, SearchRequest,
+    DocumentUpdate, JobRead, MemoryUpdate, MessageFeedbackRequest, ReviewRequest, SearchRequest,
 )
 from app.services.conversations import (
     active_memories, conversation_dict, extract_safe_memories, message_dict, recent_context, touch_conversation,
 )
 from app.services.coverage import insufficient_coverage_answer
+from app.services.documents import disable_document
 from app.services.evidence_snippets import answer_generation_budget
 from app.services.graph import compile_knowledge_graph
 from app.services.ollama import OllamaClient
@@ -177,6 +178,31 @@ def list_documents() -> list[dict]:
         return [_document_payload(document) for document in documents]
 
 
+@router.patch("/documents/{document_id}", response_model=DocumentRead)
+def update_document(document_id: int, request: DocumentUpdate) -> dict:
+    with SessionLocal() as session:
+        document = session.get(Document, document_id)
+        if not document:
+            raise HTTPException(404, "文档不存在")
+        if request.release is not None:
+            document.release = request.release.strip()
+        session.commit()
+
+    if request.enabled is False:
+        try:
+            disable_document(document_id)
+        except RuntimeError as exc:
+            raise HTTPException(409, str(exc)) from exc
+    elif request.enabled is True:
+        with SessionLocal() as session:
+            document = session.get(Document, document_id)
+            document.enabled = True
+            session.commit()
+
+    with SessionLocal() as session:
+        return _document_payload(session.get(Document, document_id))
+
+
 @router.get("/jobs/{job_id}", response_model=JobRead)
 def get_job(job_id: int) -> ImportJob:
     with SessionLocal() as session:
@@ -204,6 +230,8 @@ def reindex_document(document_id: int) -> ImportJob:
         document = session.get(Document, document_id)
         if not document:
             raise HTTPException(404, "文档不存在")
+        if not document.enabled:
+            raise HTTPException(409, "文档已停用，请先启用后再重建")
         active = session.query(ImportJob).filter(
             ImportJob.document_id == document_id,
             ImportJob.status.in_(["queued", "running"]),
@@ -552,7 +580,10 @@ def delete_memory(memory_id: int) -> dict:
 @router.get("/wiki/pages")
 def list_wiki_pages() -> list[dict]:
     with SessionLocal() as session:
-        pages = session.query(WikiPage).order_by(WikiPage.updated_at.desc()).all()
+        enabled_ids = {int(row.id) for row in session.query(Document.id).filter(Document.enabled.is_(True)).all()}
+        pages = session.query(WikiPage).filter(
+            (WikiPage.source_document_id.is_(None)) | (WikiPage.source_document_id.in_(enabled_ids))
+        ).order_by(WikiPage.updated_at.desc()).all()
         return [{"slug": p.slug, "title": p.title, "status": p.status, "type": p.page_type, "updated_at": p.updated_at} for p in pages]
 
 
@@ -562,6 +593,10 @@ def get_wiki_page(slug: str) -> dict:
         page = session.query(WikiPage).filter_by(slug=slug).one_or_none()
         if not page:
             raise HTTPException(404, "Wiki页面不存在")
+        if page.source_document_id:
+            document = session.get(Document, page.source_document_id)
+            if not document or not document.enabled:
+                raise HTTPException(404, "Wiki页面不存在")
         return {"slug": page.slug, "title": page.title, "content": page.content, "status": page.status, "links": json.loads(page.links_json)}
 
 
@@ -595,6 +630,27 @@ def get_evidence_chunk(chunk_id: int) -> dict:
         if not row:
             raise HTTPException(404, "证据块不存在")
         chunk, document = row
+        neighbor_ids = [item for item in (chunk.previous_id, chunk.next_id) if item is not None]
+        neighbor_rows = {
+            int(item.id): item
+            for item in session.query(EvidenceChunk).filter(EvidenceChunk.id.in_(neighbor_ids)).all()
+        } if neighbor_ids else {}
+
+        def neighbor_summary(neighbor_id: int | None) -> dict | None:
+            if neighbor_id is None:
+                return None
+            neighbor = neighbor_rows.get(int(neighbor_id))
+            if not neighbor or neighbor.document_id != chunk.document_id:
+                return None
+            preview = " ".join((neighbor.content or "").split())[:180]
+            return {
+                "chunk_id": neighbor.id,
+                "ordinal": neighbor.ordinal,
+                "page": neighbor.page,
+                "heading_path": neighbor.heading_path,
+                "preview": preview,
+            }
+
         return {
             "chunk_id": chunk.id,
             "document_id": document.id,
@@ -604,6 +660,11 @@ def get_evidence_chunk(chunk_id: int) -> dict:
             "heading_path": chunk.heading_path,
             "block_type": chunk.block_type,
             "content": chunk.content,
+            "ordinal": chunk.ordinal,
+            "neighbors": {
+                "previous": neighbor_summary(chunk.previous_id),
+                "next": neighbor_summary(chunk.next_id),
+            },
         }
 
 

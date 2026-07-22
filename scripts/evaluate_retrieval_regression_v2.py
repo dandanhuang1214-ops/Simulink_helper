@@ -10,6 +10,7 @@ from statistics import mean, median
 from time import perf_counter
 
 from app.services.retrieval_pipeline import retrieve_evidence_with_coverage
+from app.services.evaluation_refs import resolve_gold_evidence
 
 
 DEFAULT_SET = Path("/app/docs/evaluation/EVAL_REGRESSION_V2.json")
@@ -63,7 +64,7 @@ async def evaluate_case(case: dict, profile: str) -> dict:
     elapsed_ms = round((perf_counter() - started) * 1000)
     candidate_ids = [int(item["chunk_id"]) for item in result.candidates]
     selected_ids = [int(item["chunk_id"]) for item in result.evidence]
-    gold = [int(item) for item in case["gold_evidence"]]
+    gold = resolve_gold_evidence(case)
     hit10 = hit(candidate_ids, gold, 10)
     hit30 = hit(candidate_ids, gold, 30)
     selected_hit = hit(selected_ids, gold)
@@ -175,7 +176,9 @@ async def main() -> None:
     args = parser.parse_args()
 
     payload = json.loads(args.set.read_text(encoding="utf-8"))
-    assert payload.get("status") in {"frozen_v2_baseline", "frozen_v3_holdout"}, (
+    assert payload.get("status") in {
+        "frozen_v2_baseline", "frozen_v3_holdout", "development_regression_v3_1",
+    }, (
         "evaluation set must be frozen before running"
     )
     selected = {item.strip().upper() for item in args.only.split(",") if item.strip()}

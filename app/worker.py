@@ -16,7 +16,13 @@ from app.services.wiki import compile_source_page
 
 def claim_job() -> int | None:
     with SessionLocal() as session:
-        job = session.query(ImportJob).filter_by(status="queued").order_by(ImportJob.id).first()
+        job = (
+            session.query(ImportJob)
+            .join(Document)
+            .filter(ImportJob.status == "queued", Document.enabled.is_(True))
+            .order_by(ImportJob.id)
+            .first()
+        )
         if not job:
             return None
         job.status = "running"

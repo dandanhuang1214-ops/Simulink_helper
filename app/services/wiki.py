@@ -230,6 +230,8 @@ def _links(content: str) -> list[str]:
 
 
 async def compile_source_page(document: Document, chunks: list[EvidenceChunk]) -> list[WikiPage]:
+    if not document.enabled:
+        return []
     packs = _section_packs(chunks)
     if not packs:
         return []
@@ -348,8 +350,15 @@ def wiki_graph() -> dict:
             edges[key] = {"source": source, "target": target, "label": label, **payload}
 
     with SessionLocal() as session:
-        documents = session.query(Document).order_by(Document.id).all()
-        pages = session.query(WikiPage).order_by(WikiPage.id).all()
+        documents = session.query(Document).filter(
+            Document.enabled.is_(True),
+            Document.status == "ready",
+        ).order_by(Document.id).all()
+        enabled_document_ids = {document.id for document in documents}
+        pages = session.query(WikiPage).filter(
+            (WikiPage.source_document_id.is_(None))
+            | (WikiPage.source_document_id.in_(enabled_document_ids))
+        ).order_by(WikiPage.id).all()
         graph_entities = session.query(GraphEntity).order_by(GraphEntity.id).all()
         graph_relations = session.query(GraphRelation).order_by(GraphRelation.id).all()
 
@@ -451,6 +460,7 @@ def wiki_graph() -> dict:
 
         if cited_ids:
             chunks = session.query(EvidenceChunk).filter(EvidenceChunk.id.in_(sorted(cited_ids))).all()
+            cited_chunk_ids = {int(item.id) for item in chunks}
             for chunk in chunks:
                 evidence_id = f"evidence:{chunk.id}"
                 document = chunk.document
@@ -466,6 +476,8 @@ def wiki_graph() -> dict:
                     heading_path=chunk.heading_path,
                 )
                 add_edge(evidence_id, f"doc:{chunk.document_id}", "from_document")
+                if chunk.next_id and int(chunk.next_id) in cited_chunk_ids:
+                    add_edge(evidence_id, f"evidence:{int(chunk.next_id)}", "next_chunk")
 
     stats = {
         "documents": sum(1 for node in nodes.values() if node.get("type") == "document"),

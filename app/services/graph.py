@@ -8,7 +8,7 @@ from typing import Any
 
 from slugify import slugify
 
-from app.database import EvidenceChunk, GraphEntity, GraphRelation, SessionLocal, WikiPage
+from app.database import Document, EvidenceChunk, GraphEntity, GraphRelation, SessionLocal, WikiPage
 from app.services.ollama import OllamaClient
 from app.services.wiki import _citation_ids, _links
 
@@ -275,7 +275,13 @@ def _merge_refs(existing: str | None, values: list[str]) -> str:
 
 async def compile_knowledge_graph(use_llm: bool = True, limit_pages: int = 80) -> dict[str, Any]:
     with SessionLocal() as session:
-        pages = session.query(WikiPage).order_by(WikiPage.updated_at.desc()).limit(limit_pages).all()
+        enabled_document_ids = {
+            int(row.id) for row in session.query(Document.id).filter(Document.enabled.is_(True)).all()
+        }
+        pages = session.query(WikiPage).filter(
+            (WikiPage.source_document_id.is_(None))
+            | (WikiPage.source_document_id.in_(enabled_document_ids))
+        ).order_by(WikiPage.updated_at.desc()).limit(limit_pages).all()
 
     page_entities: dict[str, list[EntityCandidate]] = {}
     page_relations: dict[str, list[RelationCandidate]] = {}

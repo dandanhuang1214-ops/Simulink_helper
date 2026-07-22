@@ -13,6 +13,7 @@ class DocumentRead(BaseModel):
     media_type: str
     parse_mode: str
     status: str
+    enabled: bool
     product: str
     release: str | None
     language: str
@@ -41,6 +42,11 @@ class SearchRequest(BaseModel):
     limit: int = Field(default=10, ge=1, le=50)
     use_rewrite: bool = True
     use_rerank: bool = True
+
+
+class DocumentUpdate(BaseModel):
+    enabled: bool | None = None
+    release: str | None = Field(default=None, max_length=50)
 
 
 class ChatRequest(BaseModel):

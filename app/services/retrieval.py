@@ -466,15 +466,16 @@ async def hybrid_search(
     settings = get_settings()
     profile = (retrieval_profile or settings.retrieval_profile or "fast").lower()
     query_domains = preferred_domains(query)
-    allowed_documents: set[int] | None = None
-    if document_ids or releases:
-        with SessionLocal() as session:
-            documents = session.query(Document.id)
-            if document_ids:
-                documents = documents.filter(Document.id.in_(document_ids))
-            if releases:
-                documents = documents.filter(Document.release.in_(releases))
-            allowed_documents = {int(row.id) for row in documents.all()}
+    with SessionLocal() as session:
+        documents = session.query(Document.id).filter(
+            Document.enabled.is_(True),
+            Document.status == "ready",
+        )
+        if document_ids:
+            documents = documents.filter(Document.id.in_(document_ids))
+        if releases:
+            documents = documents.filter(Document.release.in_(releases))
+        allowed_documents = {int(row.id) for row in documents.all()}
 
     rewritten = await rewrite_query(query) if use_rewrite else [query]
     query_plan = _weighted_query_plan(query, rewritten)

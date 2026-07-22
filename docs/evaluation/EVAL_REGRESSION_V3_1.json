@@ -1,0 +1,1869 @@
+{
+  "version": "3.1",
+  "status": "development_regression_v3_1",
+  "annotation_policy": "source_first_no_retrieval_labels",
+  "created_from": "approved_question_draft",
+  "usage_policy": "repeatable_development_regression; not an unseen holdout",
+  "cases": [
+    {
+      "id": "V3-SIM-01",
+      "domain": "simulink",
+      "type": "procedure",
+      "query_style": "间接流程 / 无“如何”",
+      "question": "模型层级比较深时，请说明从顶层定位到某个子系统，并继续追踪一条信号来源的操作顺序。",
+      "expected_mode": "rag",
+      "expected_docs": [
+        "MathWorks_Simulink_Getting_Started_R2026a"
+      ],
+      "expected_sections": [
+        "View Model Hierarchy",
+        "Trace a Signal"
+      ],
+      "must_cover": [
+        "层级导航与信号追踪应区分；不得把普通搜索说成信号追踪。"
+      ],
+      "forbidden": [
+        "层级导航与信号追踪应区分；不得把普通搜索说成信号追踪。"
+      ],
+      "gold_evidence": [
+        4508,
+        4509,
+        4512
+      ],
+      "gold_status": "annotated_source",
+      "gold_notes": "Source-first annotation from immutable evidence chunks: E:1018, E:1019, E:1022.",
+      "review_status": "keep",
+      "legacy_gold_evidence": [
+        1018,
+        1019,
+        1022
+      ],
+      "gold_evidence_refs": [
+        {
+          "key": "d1f586a0-25d9-5735-9568-7a0af22d58a5",
+          "document_sha256": "ac193cb7b1743395a1732066271c7275b7f01c45a0a90edd7b59f21080b0e538",
+          "document_title": "MathWorks_Simulink_Getting_Started_R2026a",
+          "ordinal": 64,
+          "content_sha256": "e1949b21dbb3a93e0b1153141c3b3bd946462f92471d6de90920847fa796e1d9",
+          "page": 66,
+          "heading_path": "Navigate a Simulink Model / Explore Model Hierarchy / View Model Hierarchy"
+        },
+        {
+          "key": "ba96b97e-50d1-547a-a2b1-2d09c2400d1f",
+          "document_sha256": "ac193cb7b1743395a1732066271c7275b7f01c45a0a90edd7b59f21080b0e538",
+          "document_title": "MathWorks_Simulink_Getting_Started_R2026a",
+          "ordinal": 65,
+          "content_sha256": "a8b67f5302112a2e9c86f48ff2680b654c659ec8e5c91fff8dff981f56aca645",
+          "page": 67,
+          "heading_path": "Navigate a Simulink Model / Explore Model Hierarchy / View Model Hierarchy"
+        },
+        {
+          "key": "afd7c37c-5a2f-521e-afd1-9f3b33293e6a",
+          "document_sha256": "ac193cb7b1743395a1732066271c7275b7f01c45a0a90edd7b59f21080b0e538",
+          "document_title": "MathWorks_Simulink_Getting_Started_R2026a",
+          "ordinal": 68,
+          "content_sha256": "cd6ab53ed24054e5b1596eb77f2b45bdc786584786b461474efb6dcc37c8ed98",
+          "page": 70,
+          "heading_path": "Navigate a Simulink Model / Explore Model Hierarchy / Trace a Signal"
+        }
+      ],
+      "gold_migration": "stable_ref_verified_after_document_reindex"
+    },
+    {
+      "id": "V3-SIM-02",
+      "domain": "simulink",
+      "type": "scenario",
+      "query_style": "场景解释",
+      "question": "修改块参数后，仿真停止时间和块参数分别控制什么，查看结果时需要注意什么？",
+      "expected_mode": "rag",
+      "expected_docs": [
+        "MathWorks_Simulink_Getting_Started_R2026a"
+      ],
+      "expected_sections": [
+        "Edit Block Parameters",
+        "Run a Simulation",
+        "View Simulation Data"
+      ],
+      "must_cover": [
+        "区分模型/块参数、停止时间与结果查看；不编造统一单位。"
+      ],
+      "forbidden": [
+        "区分模型/块参数、停止时间与结果查看；不编造统一单位。"
+      ],
+      "gold_evidence": [
+        4497,
+        4498,
+        4499
+      ],
+      "gold_status": "annotated_source",
+      "gold_notes": "Source-first annotation from immutable evidence chunks: E:1007, E:1008, E:1009.",
+      "review_status": "keep",
+      "legacy_gold_evidence": [
+        1007,
+        1008,
+        1009
+      ],
+      "gold_evidence_refs": [
+        {
+          "key": "6a9dc65d-5333-5731-9aa7-add18742e0b9",
+          "document_sha256": "ac193cb7b1743395a1732066271c7275b7f01c45a0a90edd7b59f21080b0e538",
+          "document_title": "MathWorks_Simulink_Getting_Started_R2026a",
+          "ordinal": 53,
+          "content_sha256": "377b752978318ff5c2b46084e010468e66ee389c5a592df275d7bcd6b98db70a",
+          "page": 55,
+          "heading_path": "Simple Simulink Model / Create a Simple Model / Edit Block Parameter Values"
+        },
+        {
+          "key": "c20c1a90-6a6a-5e2e-ae53-cc194a9751de",
+          "document_sha256": "ac193cb7b1743395a1732066271c7275b7f01c45a0a90edd7b59f21080b0e538",
+          "document_title": "MathWorks_Simulink_Getting_Started_R2026a",
+          "ordinal": 54,
+          "content_sha256": "e86ed5207dc877828a37eb58012f8d2b44f9388ae6015b2d86b8f69d035af0b0",
+          "page": 56,
+          "heading_path": "Simple Simulink Model / Create a Simple Model / Run Simulation"
+        },
+        {
+          "key": "ff41e262-210d-5fdc-9e4b-57063ba893a0",
+          "document_sha256": "ac193cb7b1743395a1732066271c7275b7f01c45a0a90edd7b59f21080b0e538",
+          "document_title": "MathWorks_Simulink_Getting_Started_R2026a",
+          "ordinal": 55,
+          "content_sha256": "99afead9d0d8e1fe2b7e9f001253abd1c85c0112b0aee758e827553e61e52e5e",
+          "page": 57,
+          "heading_path": "Simple Simulink Model / Create a Simple Model / View Simulation Data"
+        }
+      ],
+      "gold_migration": "stable_ref_verified_after_document_reindex"
+    },
+    {
+      "id": "V3-SIM-03",
+      "domain": "simulink",
+      "type": "procedure",
+      "query_style": "口语流程",
+      "question": "我把几个 block 放进模型了，接下来怎样连线、运行并在 Data Inspector 里看曲线？",
+      "expected_mode": "rag",
+      "expected_docs": [
+        "MathWorks_Simulink_Getting_Started_R2026a"
+      ],
+      "expected_sections": [
+        "Connect Blocks",
+        "Run a Simulation",
+        "View Simulation Data"
+      ],
+      "must_cover": [
+        "连线、运行、查看是连续但可区分的阶段；UI 动作必须有证据。"
+      ],
+      "forbidden": [
+        "不得超出原始证据或把限定条件泛化。"
+      ],
+      "gold_evidence": [
+        4495,
+        4498,
+        4499,
+        4502
+      ],
+      "gold_status": "annotated_source",
+      "gold_notes": "Source-first annotation from immutable evidence chunks: E:1005, E:1008, E:1009, E:1012.",
+      "review_status": "keep",
+      "legacy_gold_evidence": [
+        1005,
+        1008,
+        1009,
+        1012
+      ],
+      "gold_evidence_refs": [
+        {
+          "key": "c85123d3-5e63-52ca-9a3a-f2b8b9f8b4ab",
+          "document_sha256": "ac193cb7b1743395a1732066271c7275b7f01c45a0a90edd7b59f21080b0e538",
+          "document_title": "MathWorks_Simulink_Getting_Started_R2026a",
+          "ordinal": 51,
+          "content_sha256": "b3cc1c8af722670ee9186f2892efcf15321ae0d8a2862fbbc5819328dbceb83d",
+          "page": 53,
+          "heading_path": "Simple Simulink Model / Create a Simple Model / Connect Blocks"
+        },
+        {
+          "key": "c20c1a90-6a6a-5e2e-ae53-cc194a9751de",
+          "document_sha256": "ac193cb7b1743395a1732066271c7275b7f01c45a0a90edd7b59f21080b0e538",
+          "document_title": "MathWorks_Simulink_Getting_Started_R2026a",
+          "ordinal": 54,
+          "content_sha256": "e86ed5207dc877828a37eb58012f8d2b44f9388ae6015b2d86b8f69d035af0b0",
+          "page": 56,
+          "heading_path": "Simple Simulink Model / Create a Simple Model / Run Simulation"
+        },
+        {
+          "key": "ff41e262-210d-5fdc-9e4b-57063ba893a0",
+          "document_sha256": "ac193cb7b1743395a1732066271c7275b7f01c45a0a90edd7b59f21080b0e538",
+          "document_title": "MathWorks_Simulink_Getting_Started_R2026a",
+          "ordinal": 55,
+          "content_sha256": "99afead9d0d8e1fe2b7e9f001253abd1c85c0112b0aee758e827553e61e52e5e",
+          "page": 57,
+          "heading_path": "Simple Simulink Model / Create a Simple Model / View Simulation Data"
+        },
+        {
+          "key": "695bed6b-5407-5a5e-8f5c-7213c7edb8ca",
+          "document_sha256": "ac193cb7b1743395a1732066271c7275b7f01c45a0a90edd7b59f21080b0e538",
+          "document_title": "MathWorks_Simulink_Getting_Started_R2026a",
+          "ordinal": 58,
+          "content_sha256": "f22c5cff86b71cbf42d0dfca88a4bac1e1dcb670e543549ad6b0d647a732564d",
+          "page": 60,
+          "heading_path": "Simple Simulink Model / Create a Simple Model / Refine Model"
+        }
+      ],
+      "gold_migration": "stable_ref_verified_after_document_reindex"
+    },
+    {
+      "id": "V3-SIM-04",
+      "domain": "simulink",
+      "type": "scenario",
+      "query_style": "概念边界",
+      "question": "subsystem 只是为了让画布更整洁吗？它在模型层级和封装方面还有什么作用？",
+      "expected_mode": "rag",
+      "expected_docs": [
+        "MathWorks_Simulink_Getting_Started_R2026a"
+      ],
+      "expected_sections": [
+        "View Model Hierarchy",
+        "Subsystem Ports and Data Transfer"
+      ],
+      "must_cover": [
+        "回答层级与封装，不把所有 subsystem 都说成原子执行单元。"
+      ],
+      "forbidden": [
+        "回答层级与封装，不把所有 subsystem 都说成原子执行单元。"
+      ],
+      "gold_evidence": [
+        4508,
+        4510
+      ],
+      "gold_status": "annotated_source",
+      "gold_notes": "Source-first annotation from immutable evidence chunks: E:1018, E:1020.",
+      "review_status": "keep",
+      "legacy_gold_evidence": [
+        1018,
+        1020
+      ],
+      "gold_evidence_refs": [
+        {
+          "key": "d1f586a0-25d9-5735-9568-7a0af22d58a5",
+          "document_sha256": "ac193cb7b1743395a1732066271c7275b7f01c45a0a90edd7b59f21080b0e538",
+          "document_title": "MathWorks_Simulink_Getting_Started_R2026a",
+          "ordinal": 64,
+          "content_sha256": "e1949b21dbb3a93e0b1153141c3b3bd946462f92471d6de90920847fa796e1d9",
+          "page": 66,
+          "heading_path": "Navigate a Simulink Model / Explore Model Hierarchy / View Model Hierarchy"
+        },
+        {
+          "key": "bb0a7f43-8475-5f83-b323-e0b93800195f",
+          "document_sha256": "ac193cb7b1743395a1732066271c7275b7f01c45a0a90edd7b59f21080b0e538",
+          "document_title": "MathWorks_Simulink_Getting_Started_R2026a",
+          "ordinal": 66,
+          "content_sha256": "5dc3981aa97fbd1e99573103095f9efbfefeef06bb4393e34fc7ef1871ba5749",
+          "page": 68,
+          "heading_path": "Navigate a Simulink Model / Explore Model Hierarchy / View Signal Attributes"
+        }
+      ],
+      "gold_migration": "stable_ref_verified_after_document_reindex"
+    },
+    {
+      "id": "V3-SIM-05",
+      "domain": "simulink",
+      "type": "boundary",
+      "query_style": "缺失材料诊断",
+      "question": "手头没有 SLX 文件、输入数据和仿真日志，能不能直接定位这个模型为什么输出异常？",
+      "expected_mode": "refusal",
+      "expected_docs": [],
+      "expected_sections": [],
+      "must_cover": [
+        "明确无法直接定位；请求最小模型、输入、复现步骤和日志，可提供通用排查方法。"
+      ],
+      "forbidden": [
+        "不得超出原始证据或把限定条件泛化。"
+      ],
+      "gold_evidence": [],
+      "gold_status": "not_applicable",
+      "gold_notes": "边界题不绑定证据块；需要识别知识范围或私有运行材料缺失。",
+      "review_status": "keep",
+      "legacy_gold_evidence": [],
+      "gold_evidence_refs": []
+    },
+    {
+      "id": "V3-AUT-01",
+      "domain": "autosar",
+      "type": "relationship",
+      "query_style": "多意图关系",
+      "question": "AUTOSAR 组件中的端口、数据元素和 runnable，到了 Simulink 组件模型里分别落在什么位置？",
+      "expected_mode": "rag",
+      "expected_docs": [
+        "AUTOSAR Blockset User Guide R2024a"
+      ],
+      "expected_sections": [
+        "Model AUTOSAR Communication",
+        "Configure AUTOSAR Runnables"
+      ],
+      "must_cover": [
+        "说明映射关系和边界，不把端口、数据元素、runnable 混为一类。"
+      ],
+      "forbidden": [
+        "说明映射关系和边界，不把端口、数据元素、runnable 混为一类。"
+      ],
+      "gold_evidence": [
+        3700,
+        3701,
+        3703,
+        3695
+      ],
+      "gold_status": "annotated_source",
+      "gold_notes": "Source-first annotation from immutable evidence chunks: E:210, E:211, E:213, E:205.",
+      "review_status": "keep",
+      "legacy_gold_evidence": [
+        210,
+        211,
+        213,
+        205
+      ],
+      "gold_evidence_refs": [
+        {
+          "key": "1f35e744-fb58-5ddb-96b5-aab1362ede9e",
+          "document_sha256": "4f064ba67ff0da513841c45d0f7969c067505df223a0bc44ede2bba9ad7bb54b",
+          "document_title": "AUTOSAR Blockset User Guide R2024a",
+          "ordinal": 93,
+          "content_sha256": "9dd8f82d5d2d696efc1fd89d396d3900ca78dd4d5a4800bc9654ba35e7d8307e",
+          "page": 89,
+          "heading_path": "Modeling Patterns for AUTOSAR Components / Model AUTOSAR Communication / Sender-Receiver Interface"
+        },
+        {
+          "key": "72fba324-2409-58c6-8cd0-5b24865b40eb",
+          "document_sha256": "4f064ba67ff0da513841c45d0f7969c067505df223a0bc44ede2bba9ad7bb54b",
+          "document_title": "AUTOSAR Blockset User Guide R2024a",
+          "ordinal": 94,
+          "content_sha256": "89e14e0512ff6a128a9e99fccc279fcc2a83415af11d928be5ac786d88165f71",
+          "page": 90,
+          "heading_path": "Modeling Patterns for AUTOSAR Components / Model AUTOSAR Communication / Sender-Receiver Interface"
+        },
+        {
+          "key": "b7726a72-efe7-5146-be0f-8684d274a2d4",
+          "document_sha256": "4f064ba67ff0da513841c45d0f7969c067505df223a0bc44ede2bba9ad7bb54b",
+          "document_title": "AUTOSAR Blockset User Guide R2024a",
+          "ordinal": 96,
+          "content_sha256": "91bc3d450cf3c3c48d3020e814b2a8ecc011a834c21668c275eeaf28b060120d",
+          "page": 92,
+          "heading_path": "Modeling Patterns for AUTOSAR Components / Model AUTOSAR Communication / Client-Server Interface"
+        },
+        {
+          "key": "01277250-dca7-57ed-872f-188f41782144",
+          "document_sha256": "4f064ba67ff0da513841c45d0f7969c067505df223a0bc44ede2bba9ad7bb54b",
+          "document_title": "AUTOSAR Blockset User Guide R2024a",
+          "ordinal": 88,
+          "content_sha256": "5e30d4a8ee57e97227f7997661c99608652d4a5371b5da93f007138451376703",
+          "page": 84,
+          "heading_path": "Modeling Patterns for AUTOSAR Components / Modeling Patterns for AUTOSAR Runnables"
+        }
+      ],
+      "gold_migration": "stable_ref_verified_after_document_reindex"
+    },
+    {
+      "id": "V3-AUT-02",
+      "domain": "autosar",
+      "type": "procedure",
+      "query_style": "间接流程 / “怎样”",
+      "question": "作者工具重新导出了一版 ARXML，已有 Simulink 组件模型怎样同步这些变化？",
+      "expected_mode": "rag",
+      "expected_docs": [
+        "AUTOSAR Blockset User Guide R2024a"
+      ],
+      "expected_sections": [
+        "Update AUTOSAR Component Model"
+      ],
+      "must_cover": [
+        "区分首次导入与更新；不得声称所有手工修改都能无冲突保留。"
+      ],
+      "forbidden": [
+        "区分首次导入与更新；不得声称所有手工修改都能无冲突保留。"
+      ],
+      "gold_evidence": [
+        3754,
+        3759,
+        3768,
+        3769,
+        3772
+      ],
+      "gold_status": "annotated_source",
+      "gold_notes": "Source-first annotation from immutable evidence chunks: E:264, E:269, E:278, E:279, E:282.",
+      "review_status": "keep",
+      "legacy_gold_evidence": [
+        264,
+        269,
+        278,
+        279,
+        282
+      ],
+      "gold_evidence_refs": [
+        {
+          "key": "8fc5e971-bf6c-5013-ae1d-e854afe0a644",
+          "document_sha256": "4f064ba67ff0da513841c45d0f7969c067505df223a0bc44ede2bba9ad7bb54b",
+          "document_title": "AUTOSAR Blockset User Guide R2024a",
+          "ordinal": 147,
+          "content_sha256": "27726a814b52a976ee69dc81a53cd0ad45467b95a112290f4534c68825c9e2f4",
+          "page": 135,
+          "heading_path": "AUTOSAR Component Creation / Import AUTOSAR XML Descriptions Into Simulink"
+        },
+        {
+          "key": "80292578-3733-5ee6-a4d3-951f5a5666e8",
+          "document_sha256": "4f064ba67ff0da513841c45d0f7969c067505df223a0bc44ede2bba9ad7bb54b",
+          "document_title": "AUTOSAR Blockset User Guide R2024a",
+          "ordinal": 152,
+          "content_sha256": "efb5c88c2e2d506a97a33c098338fadf647b576ee8f74c0991881bd1fb7b2c01",
+          "page": 138,
+          "heading_path": "AUTOSAR Component Creation / Import AUTOSAR XML Descriptions Into Simulink / Import Shared Element Packages into Component Model"
+        },
+        {
+          "key": "65fe7bb6-6e30-50c7-9661-2662fb62419b",
+          "document_sha256": "4f064ba67ff0da513841c45d0f7969c067505df223a0bc44ede2bba9ad7bb54b",
+          "document_title": "AUTOSAR Blockset User Guide R2024a",
+          "ordinal": 161,
+          "content_sha256": "2a0567d621c38f95c1df753ef7eefb8d640f941a507629735e3d80158fb84b5e",
+          "page": 147,
+          "heading_path": "AUTOSAR Component Creation / Import AUTOSAR Software Component Updates / Update Model with AUTOSAR Software Component Changes"
+        },
+        {
+          "key": "31f844ca-27c6-5730-b15f-4b1451d02901",
+          "document_sha256": "4f064ba67ff0da513841c45d0f7969c067505df223a0bc44ede2bba9ad7bb54b",
+          "document_title": "AUTOSAR Blockset User Guide R2024a",
+          "ordinal": 162,
+          "content_sha256": "e931a8701bf1a22d09a6d6e1cdc519dff9f40bac4d5e6e5d66a64b04a9579422",
+          "page": 148,
+          "heading_path": "AUTOSAR Component Creation / Import AUTOSAR Software Component Updates / Update AUTOSAR Classic Architecture Model from ARXML"
+        },
+        {
+          "key": "fa169f45-9b30-5183-b414-e9f1660d5e87",
+          "document_sha256": "4f064ba67ff0da513841c45d0f7969c067505df223a0bc44ede2bba9ad7bb54b",
+          "document_title": "AUTOSAR Blockset User Guide R2024a",
+          "ordinal": 165,
+          "content_sha256": "b059f8e9cef1347fded134b689300ef14679ef50417295bd87a39439f6a278e7",
+          "page": 151,
+          "heading_path": "AUTOSAR Component Creation / Import AUTOSAR Software Component Updates / AUTOSAR Update Report Section Examples"
+        }
+      ],
+      "gold_migration": "stable_ref_verified_after_document_reindex"
+    },
+    {
+      "id": "V3-AUT-03",
+      "domain": "autosar",
+      "type": "scenario",
+      "query_style": "概念+操作",
+      "question": "标定参数在 AUTOSAR 组件模型中表示什么，模型里通常怎样配置或映射？",
+      "expected_mode": "rag",
+      "expected_docs": [
+        "AUTOSAR Blockset User Guide R2024a"
+      ],
+      "expected_sections": [
+        "Calibration Parameters",
+        "Configure AUTOSAR Parameters"
+      ],
+      "must_cover": [
+        "定义与配置证据分开；不能泛化成所有参数都是标定参数。"
+      ],
+      "forbidden": [
+        "定义与配置证据分开；不能泛化成所有参数都是标定参数。"
+      ],
+      "gold_evidence": [
+        3736,
+        3737,
+        3815,
+        4068
+      ],
+      "gold_status": "annotated_source",
+      "gold_notes": "Source-first annotation from immutable evidence chunks: E:246, E:247, E:325, E:578.",
+      "review_status": "keep",
+      "legacy_gold_evidence": [
+        246,
+        247,
+        325,
+        578
+      ],
+      "gold_evidence_refs": [
+        {
+          "key": "4d9a2dc8-7f4c-58e7-8642-eb4b8518754d",
+          "document_sha256": "4f064ba67ff0da513841c45d0f7969c067505df223a0bc44ede2bba9ad7bb54b",
+          "document_title": "AUTOSAR Blockset User Guide R2024a",
+          "ordinal": 129,
+          "content_sha256": "b0b5d494339cec2214cae84f23e31b118de3fe7452120c121d17db387c4cc01d",
+          "page": 119,
+          "heading_path": "Modeling Patterns for AUTOSAR Components / Model AUTOSAR Calibration Parameters and Lookup Tables / Calibration Parameters for STD_AXIS, FIX_AXIS, and COM_AXIS Lookup Tables"
+        },
+        {
+          "key": "ef1b2d31-8ea9-5be9-8a4b-74c225e91b12",
+          "document_sha256": "4f064ba67ff0da513841c45d0f7969c067505df223a0bc44ede2bba9ad7bb54b",
+          "document_title": "AUTOSAR Blockset User Guide R2024a",
+          "ordinal": 130,
+          "content_sha256": "36094dc468b83637dd4f1b1b2938c837f983d1cc4d448adb28955d7a9ab3b3c0",
+          "page": 120,
+          "heading_path": "Modeling Patterns for AUTOSAR Components / Model AUTOSAR Calibration Parameters and Lookup Tables / Calibration Parameters for STD_AXIS, FIX_AXIS, and COM_AXIS Lookup Tables"
+        },
+        {
+          "key": "f11b327c-42bf-5aeb-979d-a416e9e09df2",
+          "document_sha256": "4f064ba67ff0da513841c45d0f7969c067505df223a0bc44ede2bba9ad7bb54b",
+          "document_title": "AUTOSAR Blockset User Guide R2024a",
+          "ordinal": 208,
+          "content_sha256": "2d65887ced551b6f72851b7ac5be2cb1920954d7c02ec1b01d77cb3e0b8c057d",
+          "page": 192,
+          "heading_path": "AUTOSAR Component Development / Configure AUTOSAR Elements and Properties / Configure AUTOSAR Parameters"
+        },
+        {
+          "key": "b7764e6d-f3c0-54ab-b07c-db7afdaf849e",
+          "document_sha256": "4f064ba67ff0da513841c45d0f7969c067505df223a0bc44ede2bba9ad7bb54b",
+          "document_title": "AUTOSAR Blockset User Guide R2024a",
+          "ordinal": 461,
+          "content_sha256": "a0c2545b053cd2f149e363455457e9cf9d12727dd982ecc9f3703937cee3da8c",
+          "page": 441,
+          "heading_path": "AUTOSAR Component Development / Configure AUTOSAR Data for Calibration and Measurement / Configure SwAddrMethod"
+        }
+      ],
+      "gold_migration": "stable_ref_verified_after_document_reindex"
+    },
+    {
+      "id": "V3-AUT-04",
+      "domain": "autosar",
+      "type": "relationship",
+      "query_style": "输出关系",
+      "question": "从 AUTOSAR 组件模型生成代码时，C 代码和 ARXML 各自描述什么，二者如何配合交付？",
+      "expected_mode": "rag",
+      "expected_docs": [
+        "AUTOSAR Blockset User Guide R2024a"
+      ],
+      "expected_sections": [
+        "Generate AUTOSAR Code and ARXML"
+      ],
+      "must_cover": [
+        "代码与描述文件职责不同；不能把生成结果说成可直接量产的完整 ECU。"
+      ],
+      "forbidden": [
+        "代码与描述文件职责不同；不能把生成结果说成可直接量产的完整 ECU。"
+      ],
+      "gold_evidence": [
+        3651,
+        3695,
+        3704,
+        3764
+      ],
+      "gold_status": "annotated_source",
+      "gold_notes": "Source-first annotation from immutable evidence chunks: E:161, E:205, E:214, E:274.",
+      "review_status": "keep",
+      "legacy_gold_evidence": [
+        161,
+        205,
+        214,
+        274
+      ],
+      "gold_evidence_refs": [
+        {
+          "key": "ca0f455e-3a79-5990-8d8e-b60814bc5b34",
+          "document_sha256": "4f064ba67ff0da513841c45d0f7969c067505df223a0bc44ede2bba9ad7bb54b",
+          "document_title": "AUTOSAR Blockset User Guide R2024a",
+          "ordinal": 44,
+          "content_sha256": "3b8e53d25b53321de872df24ee71b74f6ae72470244c8f764be11cdf1ee5b12e",
+          "page": 41,
+          "heading_path": "Overview of AUTOSAR Support / Optional: Generate AUTOSAR Software Component Code (Requires Embedded Coder)"
+        },
+        {
+          "key": "01277250-dca7-57ed-872f-188f41782144",
+          "document_sha256": "4f064ba67ff0da513841c45d0f7969c067505df223a0bc44ede2bba9ad7bb54b",
+          "document_title": "AUTOSAR Blockset User Guide R2024a",
+          "ordinal": 88,
+          "content_sha256": "5e30d4a8ee57e97227f7997661c99608652d4a5371b5da93f007138451376703",
+          "page": 84,
+          "heading_path": "Modeling Patterns for AUTOSAR Components / Modeling Patterns for AUTOSAR Runnables"
+        },
+        {
+          "key": "6bbb8b6a-b288-564c-8dcf-ad038a7d9e90",
+          "document_sha256": "4f064ba67ff0da513841c45d0f7969c067505df223a0bc44ede2bba9ad7bb54b",
+          "document_title": "AUTOSAR Blockset User Guide R2024a",
+          "ordinal": 97,
+          "content_sha256": "054790bbd1e15360a524b18872fff4b45f81bd7a511516d6ada24c7d55eac175",
+          "page": 93,
+          "heading_path": "Modeling Patterns for AUTOSAR Components / Model AUTOSAR Communication / Mode-Switch Interface"
+        },
+        {
+          "key": "17fc5e50-d7aa-563f-80a5-2d9ceede572d",
+          "document_sha256": "4f064ba67ff0da513841c45d0f7969c067505df223a0bc44ede2bba9ad7bb54b",
+          "document_title": "AUTOSAR Blockset User Guide R2024a",
+          "ordinal": 157,
+          "content_sha256": "a67581efcd003c2cd2ef8447a97054580480581325149d7e8a9ed8cf4973952d",
+          "page": 143,
+          "heading_path": "AUTOSAR Component Creation / Import AUTOSAR Component to Simulink"
+        }
+      ],
+      "gold_migration": "stable_ref_verified_after_document_reindex"
+    },
+    {
+      "id": "V3-AUT-05",
+      "domain": "autosar",
+      "type": "boundary",
+      "query_style": "第三方私有环境",
+      "question": "只有 MathWorks 文档，没有我的 EB tresos 工程、ECUC 配置和目标 ECU 信息，能直接给出可落地的完整配置吗？",
+      "expected_mode": "refusal",
+      "expected_docs": [],
+      "expected_sections": [],
+      "must_cover": [
+        "不冒充访问第三方工程；说明需要的工程与配置材料。"
+      ],
+      "forbidden": [
+        "不冒充访问第三方工程；说明需要的工程与配置材料。"
+      ],
+      "gold_evidence": [],
+      "gold_status": "not_applicable",
+      "gold_notes": "边界题不绑定证据块；需要识别知识范围或私有运行材料缺失。",
+      "review_status": "keep",
+      "legacy_gold_evidence": [],
+      "gold_evidence_refs": []
+    },
+    {
+      "id": "V3-STF-01",
+      "domain": "stateflow",
+      "type": "comparison",
+      "query_style": "比较",
+      "question": "Stateflow 中并行状态与互斥状态的激活方式和执行语义有什么不同？",
+      "expected_mode": "rag",
+      "expected_docs": [
+        "MathWorks Stateflow User Guide"
+      ],
+      "expected_sections": [
+        "Define Exclusive and Parallel Modes",
+        "Execution Order for Parallel States"
+      ],
+      "must_cover": [
+        "区分 AND/OR 分解或等价概念；不杜撰固定执行顺序。"
+      ],
+      "forbidden": [
+        "区分 AND/OR 分解或等价概念；不杜撰固定执行顺序。"
+      ],
+      "gold_evidence": [
+        1098,
+        1744,
+        1194
+      ],
+      "gold_status": "annotated_source",
+      "gold_notes": "Source-first annotation from immutable evidence chunks: E:1098, E:1744, E:1194.",
+      "review_status": "keep",
+      "legacy_gold_evidence": [
+        1098,
+        1744,
+        1194
+      ],
+      "gold_evidence_refs": [
+        {
+          "key": "34e130ea-5ddd-5abd-9efd-d75872f7060a",
+          "document_sha256": "d0943146b9feac431291326050da1cce296d1df98adf26dfde52c173a37d3afa",
+          "document_title": "MathWorks Stateflow User Guide",
+          "ordinal": 74,
+          "content_sha256": "74f6428f964a85c30e9cfe85168292bd0ed224d5d17b08809fc7b0aa859e1aa6",
+          "page": 62,
+          "heading_path": "Stateflow Chart Programming / Define Exclusive and Parallel Modes by Using State Decomposition / Specify Substate Decomposition"
+        },
+        {
+          "key": "9ed7c2cf-243c-5eb0-9898-c36479eb0186",
+          "document_sha256": "d0943146b9feac431291326050da1cce296d1df98adf26dfde52c173a37d3afa",
+          "document_title": "MathWorks Stateflow User Guide",
+          "ordinal": 720,
+          "content_sha256": "606b64312ccf3eeb4f95359c7bd4d903ffa86d4e9836cf0342d1627a9de768b1",
+          "page": 712,
+          "heading_path": "Tabular Expression of Modal Logic / Create Parallel States in State Transition Tables"
+        },
+        {
+          "key": "3f28cc33-97ba-54b4-a9bf-5fd66f57f626",
+          "document_sha256": "d0943146b9feac431291326050da1cce296d1df98adf26dfde52c173a37d3afa",
+          "document_title": "MathWorks Stateflow User Guide",
+          "ordinal": 170,
+          "content_sha256": "014bbaca3ac79ec212136734a982caca83303ada690f6aa749f1f3edf36fac84",
+          "page": 159,
+          "heading_path": "Stateflow Semantics / Execution Order for Parallel States / Execution Order of Parallel States in Boxes and Subcharts"
+        }
+      ],
+      "gold_migration": "stable_ref_verified_after_document_reindex"
+    },
+    {
+      "id": "V3-STF-02",
+      "domain": "stateflow",
+      "type": "scenario",
+      "query_style": "术语组合",
+      "question": "`after`、`every` 和基于持续时间的时间逻辑分别适合表达哪类行为？",
+      "expected_mode": "rag",
+      "expected_docs": [
+        "MathWorks Stateflow User Guide"
+      ],
+      "expected_sections": [
+        "Control Chart Execution by Using Temporal Logic"
+      ],
+      "must_cover": [
+        "说明时间逻辑差异及依赖的时间/事件语义，不虚构语法。"
+      ],
+      "forbidden": [
+        "说明时间逻辑差异及依赖的时间/事件语义，不虚构语法。"
+      ],
+      "gold_evidence": [
+        1646,
+        1647,
+        1650,
+        1651,
+        1652
+      ],
+      "gold_status": "annotated_source",
+      "gold_notes": "Source-first annotation from immutable evidence chunks: E:1646, E:1647, E:1650, E:1651, E:1652.",
+      "review_status": "keep",
+      "legacy_gold_evidence": [
+        1646,
+        1647,
+        1650,
+        1651,
+        1652
+      ],
+      "gold_evidence_refs": [
+        {
+          "key": "4f0c4b25-6c7d-5104-87ea-c6a92f7675b2",
+          "document_sha256": "d0943146b9feac431291326050da1cce296d1df98adf26dfde52c173a37d3afa",
+          "document_title": "MathWorks Stateflow User Guide",
+          "ordinal": 622,
+          "content_sha256": "018bf91f65ebfa53ed1a0254b1987968d6c8cdf621ef2724c8ddd25baeff2310",
+          "page": 613,
+          "heading_path": "Use Actions in Charts / Control Chart Execution by Using Temporal Logic / Temporal Logic Operators"
+        },
+        {
+          "key": "6900bcc6-b38f-586f-aeff-3c0d50f83555",
+          "document_sha256": "d0943146b9feac431291326050da1cce296d1df98adf26dfde52c173a37d3afa",
+          "document_title": "MathWorks Stateflow User Guide",
+          "ordinal": 623,
+          "content_sha256": "4612dc0276fba981fde551632cdd6dea816f4eb611dc30409fa724231a1a0bb7",
+          "page": 614,
+          "heading_path": "Use Actions in Charts / Control Chart Execution by Using Temporal Logic / Temporal Logic Operators"
+        },
+        {
+          "key": "be42906c-e1a5-5011-acae-ba43ee450f99",
+          "document_sha256": "d0943146b9feac431291326050da1cce296d1df98adf26dfde52c173a37d3afa",
+          "document_title": "MathWorks Stateflow User Guide",
+          "ordinal": 626,
+          "content_sha256": "14e788d022705f88006f48cdbde8954cbf6c67719490cc236c26db068d3848b9",
+          "page": 617,
+          "heading_path": "Use Actions in Charts / Control Chart Execution by Using Temporal Logic / Temporal Logic Operators"
+        },
+        {
+          "key": "23ca99b1-6ccb-5587-a85a-87a3dee53d5a",
+          "document_sha256": "d0943146b9feac431291326050da1cce296d1df98adf26dfde52c173a37d3afa",
+          "document_title": "MathWorks Stateflow User Guide",
+          "ordinal": 627,
+          "content_sha256": "e429e6022b7871d92a6a893b3eb3025ccf48d4f06c7c5a4d47b6c0ea68eae2a6",
+          "page": 618,
+          "heading_path": "Use Actions in Charts / Control Chart Execution by Using Temporal Logic / Temporal Logic Operators"
+        },
+        {
+          "key": "657fbae3-9e17-52bf-9212-4b519c7d9f31",
+          "document_sha256": "d0943146b9feac431291326050da1cce296d1df98adf26dfde52c173a37d3afa",
+          "document_title": "MathWorks Stateflow User Guide",
+          "ordinal": 628,
+          "content_sha256": "661dbe577f3f42ac581ccdb59aebf32545fafa6f22abf9805e1def8e8be2ee35",
+          "page": 619,
+          "heading_path": "Use Actions in Charts / Control Chart Execution by Using Temporal Logic / Examples of Temporal Logic"
+        }
+      ],
+      "gold_migration": "stable_ref_verified_after_document_reindex"
+    },
+    {
+      "id": "V3-STF-03",
+      "domain": "stateflow",
+      "type": "scenario",
+      "query_style": "场景解释",
+      "question": "history junction 解决什么状态恢复问题，它和普通 connective junction 有什么区别？",
+      "expected_mode": "rag",
+      "expected_docs": [
+        "MathWorks Stateflow User Guide"
+      ],
+      "expected_sections": [
+        "Resume Prior Substate Activity",
+        "Combine Transitions and Junctions"
+      ],
+      "must_cover": [
+        "区分历史恢复与路径连接。"
+      ],
+      "forbidden": [
+        "不得超出原始证据或把限定条件泛化。"
+      ],
+      "gold_evidence": [
+        1128,
+        1124
+      ],
+      "gold_status": "annotated_source",
+      "gold_notes": "Source-first annotation from immutable evidence chunks: E:1128, E:1124.",
+      "review_status": "keep",
+      "legacy_gold_evidence": [
+        1128,
+        1124
+      ],
+      "gold_evidence_refs": [
+        {
+          "key": "a62e677c-8f35-58ca-aeae-2e79fc2ed46d",
+          "document_sha256": "d0943146b9feac431291326050da1cce296d1df98adf26dfde52c173a37d3afa",
+          "document_title": "MathWorks Stateflow User Guide",
+          "ordinal": 104,
+          "content_sha256": "2430016f50e3079fa53c25b28db93b3e860cdf24bbcf20aeb4e211ee06af8f32",
+          "page": 92,
+          "heading_path": "Stateflow Chart Programming / Resume Prior Substate Activity by Using History Junctions"
+        },
+        {
+          "key": "c3df2edc-93c8-5b91-872e-49490422cc44",
+          "document_sha256": "d0943146b9feac431291326050da1cce296d1df98adf26dfde52c173a37d3afa",
+          "document_title": "MathWorks Stateflow User Guide",
+          "ordinal": 100,
+          "content_sha256": "ce92da10d8cd176253a581ff290d2197611a00205cb5a2dbb2e65e62e63d1c37",
+          "page": 88,
+          "heading_path": "Stateflow Chart Programming / Combine Transitions and Junctions to Create Branching Paths / Examples of Transition Paths with Connective Junctions"
+        }
+      ],
+      "gold_migration": "stable_ref_verified_after_document_reindex"
+    },
+    {
+      "id": "V3-STF-04",
+      "domain": "stateflow",
+      "type": "procedure",
+      "query_style": "执行链路",
+      "question": "一个 chart 收到输入事件后，状态、转移条件和动作大致按什么语义参与本次执行？",
+      "expected_mode": "rag",
+      "expected_docs": [
+        "MathWorks Stateflow User Guide"
+      ],
+      "expected_sections": [
+        "How Stateflow Objects Interact During Execution",
+        "Stateflow Semantics"
+      ],
+      "must_cover": [
+        "解释执行语义但避免声称所有 chart 都有同一固定路径。"
+      ],
+      "forbidden": [
+        "不得超出原始证据或把限定条件泛化。"
+      ],
+      "gold_evidence": [
+        1077,
+        1078,
+        1102,
+        1146
+      ],
+      "gold_status": "annotated_source",
+      "gold_notes": "Source-first annotation from immutable evidence chunks: E:1077, E:1078, E:1102, E:1146.",
+      "review_status": "keep",
+      "legacy_gold_evidence": [
+        1077,
+        1078,
+        1102,
+        1146
+      ],
+      "gold_evidence_refs": [
+        {
+          "key": "7a91c2b9-67f0-5cdb-82bd-6d2a6d4a7f64",
+          "document_sha256": "d0943146b9feac431291326050da1cce296d1df98adf26dfde52c173a37d3afa",
+          "document_title": "MathWorks Stateflow User Guide",
+          "ordinal": 53,
+          "content_sha256": "e6f5615921919ecc175edf47ed2857490f3fa49cd6e9c6529fed3fe67154da0e",
+          "page": 41,
+          "heading_path": "Stateflow Chart Programming / How Stateflow Objects Interact During Execution"
+        },
+        {
+          "key": "e3ffbf09-8146-5ae6-989b-b4f0bbeae735",
+          "document_sha256": "d0943146b9feac431291326050da1cce296d1df98adf26dfde52c173a37d3afa",
+          "document_title": "MathWorks Stateflow User Guide",
+          "ordinal": 54,
+          "content_sha256": "5896fac11cfb44021d1ec9a6c5924ed16359d98f70a2a722cb2a16a208cdfab4",
+          "page": 42,
+          "heading_path": "Stateflow Chart Programming / How Stateflow Objects Interact During Execution"
+        },
+        {
+          "key": "95b2fc0b-4e56-512b-b8b0-d8509c751d3b",
+          "document_sha256": "d0943146b9feac431291326050da1cce296d1df98adf26dfde52c173a37d3afa",
+          "document_title": "MathWorks Stateflow User Guide",
+          "ordinal": 78,
+          "content_sha256": "a699520db4c33cec3d64c82dc1c612c121bfc0c604d9e47d6ef336ad5989c4ea",
+          "page": 66,
+          "heading_path": "Stateflow Chart Programming / Transition Between Operating Modes"
+        },
+        {
+          "key": "e1d674d9-fb50-5b9d-81c4-6121857abc8d",
+          "document_sha256": "d0943146b9feac431291326050da1cce296d1df98adf26dfde52c173a37d3afa",
+          "document_title": "MathWorks Stateflow User Guide",
+          "ordinal": 122,
+          "content_sha256": "5bff874d9f6e2fb3fc37576c2a18cd499e08e8f8029ddc347e6dbd58238edf40",
+          "page": 111,
+          "heading_path": "Stateflow Semantics / Stateflow Semantics / Execute an Active State"
+        }
+      ],
+      "gold_migration": "stable_ref_verified_after_document_reindex"
+    },
+    {
+      "id": "V3-STF-05",
+      "domain": "stateflow",
+      "type": "boundary",
+      "query_style": "缺失材料同义表达",
+      "question": "我不给你 chart、事件序列和 trace，你能看出某次错误转移的根因吗？",
+      "expected_mode": "refusal",
+      "expected_docs": [],
+      "expected_sections": [],
+      "must_cover": [
+        "同 V3-SIM-05 的认识论边界；必须识别不同措辞。"
+      ],
+      "forbidden": [
+        "同 V3-SIM-05 的认识论边界；必须识别不同措辞。"
+      ],
+      "gold_evidence": [],
+      "gold_status": "not_applicable",
+      "gold_notes": "边界题不绑定证据块；需要识别知识范围或私有运行材料缺失。",
+      "review_status": "keep",
+      "legacy_gold_evidence": [],
+      "gold_evidence_refs": []
+    },
+    {
+      "id": "V3-TST-01",
+      "domain": "testing",
+      "type": "procedure",
+      "query_style": "生命周期",
+      "question": "被测组件发生结构变化后，test harness 的 rebuild、同步和重新打开分别可能影响什么？",
+      "expected_mode": "rag",
+      "expected_docs": [
+        "MathWorks Simulink Test User Guide R2025a"
+      ],
+      "expected_sections": [
+        "Rebuild Test Harness",
+        "Synchronize Test Harness"
+      ],
+      "must_cover": [
+        "同步时机与限制准确；不保证所有链接永久无损。"
+      ],
+      "forbidden": [
+        "同步时机与限制准确；不保证所有链接永久无损。"
+      ],
+      "gold_evidence": [
+        2484,
+        2522,
+        2523
+      ],
+      "gold_status": "annotated_source",
+      "gold_notes": "Source-first annotation from immutable evidence chunks: E:2484, E:2522, E:2523.",
+      "review_status": "keep",
+      "legacy_gold_evidence": [
+        2484,
+        2522,
+        2523
+      ],
+      "gold_evidence_refs": [
+        {
+          "key": "c1138faa-5d78-5587-a817-4e5271560f6e",
+          "document_sha256": "fc91b8460c100507a5f7893c6135874b0737315495b1d1d5ac704d09100462ae",
+          "document_title": "MathWorks Simulink Test User Guide R2025a",
+          "ordinal": 54,
+          "content_sha256": "743820f9a45e4cd930df4c51e3c6a209ad95086396995c85f3bc768a0bae5489",
+          "page": 49,
+          "heading_path": "Test Harness / Create or Import Test Harnesses and Select Properties / Import Test Harness Dialog Box Properties"
+        },
+        {
+          "key": "b580fbf8-7e2f-5018-b79f-fdcaabb34366",
+          "document_sha256": "fc91b8460c100507a5f7893c6135874b0737315495b1d1d5ac704d09100462ae",
+          "document_title": "MathWorks Simulink Test User Guide R2025a",
+          "ordinal": 92,
+          "content_sha256": "477de6f99d340d0eb90fde372f8262264a6c58e82d16a71ce3c12ad4186fd79b",
+          "page": 87,
+          "heading_path": "Test Harness / Synchronize Changes Between Test Harness and Model / Rebuild a Test Harness"
+        },
+        {
+          "key": "11259ba1-3700-5fc2-8a37-6990f2050df0",
+          "document_sha256": "fc91b8460c100507a5f7893c6135874b0737315495b1d1d5ac704d09100462ae",
+          "document_title": "MathWorks Simulink Test User Guide R2025a",
+          "ordinal": 93,
+          "content_sha256": "c7a380aa053a79a505e31beb80ff737fafd9499c6e944cd1d421393373dab303",
+          "page": 88,
+          "heading_path": "Test Harness / Synchronize Changes Between Test Harness and Model / Check Component and Push Parameter to Main Model"
+        }
+      ],
+      "gold_migration": "stable_ref_verified_after_document_reindex"
+    },
+    {
+      "id": "V3-TST-02",
+      "domain": "testing",
+      "type": "procedure",
+      "query_style": "数据驱动流程",
+      "question": "同一个测试用例需要跑多组参数时，test iteration 的作用是什么，结果应怎样区分？",
+      "expected_mode": "rag",
+      "expected_docs": [
+        "MathWorks Simulink Test User Guide R2025a"
+      ],
+      "expected_sections": [
+        "Test Iterations"
+      ],
+      "must_cover": [
+        "参数迭代、运行与结果区分；不得把 iteration 等同多个独立 harness。"
+      ],
+      "forbidden": [
+        "参数迭代、运行与结果区分；不得把 iteration 等同多个独立 harness。"
+      ],
+      "gold_evidence": [
+        2853,
+        2854,
+        2856,
+        3012
+      ],
+      "gold_status": "annotated_source",
+      "gold_notes": "Source-first annotation from immutable evidence chunks: E:2853, E:2854, E:2856, E:3012.",
+      "review_status": "keep",
+      "legacy_gold_evidence": [
+        2853,
+        2854,
+        2856,
+        3012
+      ],
+      "gold_evidence_refs": [
+        {
+          "key": "edcb50fe-8838-5c54-bb66-c921d37056ee",
+          "document_sha256": "fc91b8460c100507a5f7893c6135874b0737315495b1d1d5ac704d09100462ae",
+          "document_title": "MathWorks Simulink Test User Guide R2025a",
+          "ordinal": 423,
+          "content_sha256": "bdc2f31d9314477a500087faf6322243f6d9f70dd7114e186087b1fdc5fc6da6",
+          "page": 413,
+          "heading_path": "Test Manager Test Cases / Test Iterations / Create Table Iterations"
+        },
+        {
+          "key": "7164b0b2-5326-51cf-8351-6a887a6d9258",
+          "document_sha256": "fc91b8460c100507a5f7893c6135874b0737315495b1d1d5ac704d09100462ae",
+          "document_title": "MathWorks Simulink Test User Guide R2025a",
+          "ordinal": 424,
+          "content_sha256": "0c5d3c77f48220a158c5712edbff26b2824b34880918a2e5de25761dba08d413",
+          "page": 414,
+          "heading_path": "Test Manager Test Cases / Test Iterations / Create Table Iterations"
+        },
+        {
+          "key": "4271343a-bed2-5071-a002-714184d3a150",
+          "document_sha256": "fc91b8460c100507a5f7893c6135874b0737315495b1d1d5ac704d09100462ae",
+          "document_title": "MathWorks Simulink Test User Guide R2025a",
+          "ordinal": 426,
+          "content_sha256": "288b8004b28e22479f367475cd5f170db6706dd6dfccbe36041929ef6316b6fa",
+          "page": 416,
+          "heading_path": "Test Manager Test Cases / Test Iterations / Create Scripted Iterations"
+        },
+        {
+          "key": "2986da77-09f1-5fb2-bd21-6fd7cebfe444",
+          "document_sha256": "fc91b8460c100507a5f7893c6135874b0737315495b1d1d5ac704d09100462ae",
+          "document_title": "MathWorks Simulink Test User Guide R2025a",
+          "ordinal": 582,
+          "content_sha256": "91c2e64d29bb5a46671fe383018d2e67467cd6c279b0a6c78079867803b43ef2",
+          "page": 564,
+          "heading_path": "Test Manager Results and Reports / Results Sections / Applied Coverage Filters"
+        }
+      ],
+      "gold_migration": "stable_ref_verified_after_document_reindex"
+    },
+    {
+      "id": "V3-TST-03",
+      "domain": "testing",
+      "type": "scenario",
+      "query_style": "结果判定",
+      "question": "Test Assessment 和基线比较分别在测试中解决什么问题，可以同时使用吗？",
+      "expected_mode": "rag",
+      "expected_docs": [
+        "MathWorks Simulink Test User Guide R2025a"
+      ],
+      "expected_sections": [
+        "Baseline Test",
+        "Test Assessment"
+      ],
+      "must_cover": [
+        "区分逻辑判定与基线信号比较；“可以同时使用”必须有证据边界。"
+      ],
+      "forbidden": [
+        "不得超出原始证据或把限定条件泛化。"
+      ],
+      "gold_evidence": [
+        2553,
+        2554,
+        2558,
+        2570
+      ],
+      "gold_status": "annotated_source",
+      "gold_notes": "Source-first annotation from immutable evidence chunks: E:2553, E:2554, E:2558, E:2570.",
+      "review_status": "keep",
+      "legacy_gold_evidence": [
+        2553,
+        2554,
+        2558,
+        2570
+      ],
+      "gold_evidence_refs": [
+        {
+          "key": "58c2ed20-5f03-50e7-b8dc-0ffa95db4fc8",
+          "document_sha256": "fc91b8460c100507a5f7893c6135874b0737315495b1d1d5ac704d09100462ae",
+          "document_title": "MathWorks Simulink Test User Guide R2025a",
+          "ordinal": 123,
+          "content_sha256": "bc4b64ebe46405080fffe8bf56e1659cad4fa63d3c704d1e542c497efa275980",
+          "page": 119,
+          "heading_path": "Test Sequences and Assessments / Assess Simulation and Compare Output Data / Compare Simulation Data to Baseline Data or Another Simulation"
+        },
+        {
+          "key": "4fecb2a4-c045-5ac3-9f99-f82017472196",
+          "document_sha256": "fc91b8460c100507a5f7893c6135874b0737315495b1d1d5ac704d09100462ae",
+          "document_title": "MathWorks Simulink Test User Guide R2025a",
+          "ordinal": 124,
+          "content_sha256": "2c20364f96d7b9ab038e2b6e84f88276d191a464b44df982bc42c8234921cd93",
+          "page": 120,
+          "heading_path": "Test Sequences and Assessments / Assess Simulation and Compare Output Data / Run-Time Assessments"
+        },
+        {
+          "key": "7722ea35-8b8c-5a59-b5da-f8d818b03dca",
+          "document_sha256": "fc91b8460c100507a5f7893c6135874b0737315495b1d1d5ac704d09100462ae",
+          "document_title": "MathWorks Simulink Test User Guide R2025a",
+          "ordinal": 128,
+          "content_sha256": "734f193768f6a2a0b12ef70cc825b635cc56a6bfd21f99449bf40461b176942d",
+          "page": 124,
+          "heading_path": "Test Sequences and Assessments / Verify Model Simulation by Using when Decomposition / Activate verify Statements by Using Signal Conditions"
+        },
+        {
+          "key": "3a62aa55-2d05-5043-a58e-4eea4bb36b7e",
+          "document_sha256": "fc91b8460c100507a5f7893c6135874b0737315495b1d1d5ac704d09100462ae",
+          "document_title": "MathWorks Simulink Test User Guide R2025a",
+          "ordinal": 140,
+          "content_sha256": "f2ea3b2d9bc166ece9ea9d1ab4ff1afc5d639756e973914e31047ccef55ca23d",
+          "page": 136,
+          "heading_path": "Test Sequences and Assessments / Author a Test Sequence and Test Assessment"
+        }
+      ],
+      "gold_migration": "stable_ref_verified_after_document_reindex"
+    },
+    {
+      "id": "V3-TST-04",
+      "domain": "testing",
+      "type": "procedure",
+      "query_style": "报告输出",
+      "question": "测试跑完后，怎样从 Test Manager 汇总结果并生成测试报告？",
+      "expected_mode": "rag",
+      "expected_docs": [
+        "MathWorks Simulink Test User Guide R2025a"
+      ],
+      "expected_sections": [
+        "Create a Test Results Report"
+      ],
+      "must_cover": [
+        "不与 Coverage 报告混淆；报告范围和入口需有证据。"
+      ],
+      "forbidden": [
+        "不与 Coverage 报告混淆；报告范围和入口需有证据。"
+      ],
+      "gold_evidence": [
+        2970,
+        2973,
+        2990
+      ],
+      "gold_status": "annotated_source",
+      "gold_notes": "Source-first annotation from immutable evidence chunks: E:2970, E:2973, E:2990.",
+      "review_status": "keep",
+      "legacy_gold_evidence": [
+        2970,
+        2973,
+        2990
+      ],
+      "gold_evidence_refs": [
+        {
+          "key": "fa9021a5-736e-5d59-998d-15f90bed46af",
+          "document_sha256": "fc91b8460c100507a5f7893c6135874b0737315495b1d1d5ac704d09100462ae",
+          "document_title": "MathWorks Simulink Test User Guide R2025a",
+          "ordinal": 540,
+          "content_sha256": "d3541a7c7b055eb2724a6a741ee3be47efcb2dc2748b6c9a324810fef80acb73",
+          "page": 521,
+          "heading_path": "Test Manager Test Cases / Create a Test Results Report"
+        },
+        {
+          "key": "2cb0aae9-f1fc-56f3-a18c-95aabe343da8",
+          "document_sha256": "fc91b8460c100507a5f7893c6135874b0737315495b1d1d5ac704d09100462ae",
+          "document_title": "MathWorks Simulink Test User Guide R2025a",
+          "ordinal": 543,
+          "content_sha256": "af2da80ec89ed3731cec58b7e96211401cd50b2b81bdc53f94a7e0c75b43665e",
+          "page": 525,
+          "heading_path": "Test Manager Results and Reports"
+        },
+        {
+          "key": "466a6b87-5e3b-5bc2-947e-37f1252bb10f",
+          "document_sha256": "fc91b8460c100507a5f7893c6135874b0737315495b1d1d5ac704d09100462ae",
+          "document_title": "MathWorks Simulink Test User Guide R2025a",
+          "ordinal": 560,
+          "content_sha256": "948ae2f3ca0731d122be2ca54455d12966d4c4e1c586faa807276ff4556c2b72",
+          "page": 542,
+          "heading_path": "Test Manager Results and Reports / Create, Set Options, and Use Templates for Test Result Reports / Generate Reports Using Templates"
+        }
+      ],
+      "gold_migration": "stable_ref_verified_after_document_reindex"
+    },
+    {
+      "id": "V3-TST-05",
+      "domain": "testing",
+      "type": "boundary",
+      "query_style": "私有文件边界",
+      "question": "没有我的 MLDATX、harness 和需求文件，你能判断某个测试为什么失败并指出具体步骤吗？",
+      "expected_mode": "refusal",
+      "expected_docs": [],
+      "expected_sections": [],
+      "must_cover": [
+        "不指定虚构失败步骤；请求测试文件、日志、评估结果和复现信息。"
+      ],
+      "forbidden": [
+        "不指定虚构失败步骤；请求测试文件、日志、评估结果和复现信息。"
+      ],
+      "gold_evidence": [],
+      "gold_status": "not_applicable",
+      "gold_notes": "边界题不绑定证据块；需要识别知识范围或私有运行材料缺失。",
+      "review_status": "keep",
+      "legacy_gold_evidence": [],
+      "gold_evidence_refs": []
+    },
+    {
+      "id": "V3-COV-01",
+      "domain": "coverage",
+      "type": "scenario",
+      "query_style": "多次运行",
+      "question": "多次仿真产生的覆盖率结果怎样累计，Current Run、Delta 和 Cumulative 分别表示什么？",
+      "expected_mode": "rag",
+      "expected_docs": [
+        "MathWorks Simulink Coverage User Guide R2024a"
+      ],
+      "expected_sections": [
+        "Access, Manage, and Aggregate Coverage Results"
+      ],
+      "must_cover": [
+        "区分当前、增量、累计结果，不声称默认永远累计。"
+      ],
+      "forbidden": [
+        "区分当前、增量、累计结果，不声称默认永远累计。"
+      ],
+      "gold_evidence": [
+        3211,
+        3226,
+        3227,
+        3474
+      ],
+      "gold_status": "annotated_source",
+      "gold_notes": "Source-first annotation from immutable evidence chunks: E:3211, E:3226, E:3227, E:3474.",
+      "review_status": "keep",
+      "legacy_gold_evidence": [
+        3211,
+        3226,
+        3227,
+        3474
+      ],
+      "gold_evidence_refs": [
+        {
+          "key": "d6bb1105-467a-571b-8c1a-93146520922d",
+          "document_sha256": "5098fb171a887280e319aa6b7d4cb3817a0e2ee85bbda58ba1fa7bc945db20f6",
+          "document_title": "MathWorks Simulink Coverage User Guide R2024a",
+          "ordinal": 75,
+          "content_sha256": "45706f7a4fa49700eca088c5aaf65935c60d5cea99bb5e03f10b86c6697e109f",
+          "page": 63,
+          "heading_path": "Setting Coverage Options / Access, Manage, and Aggregate Coverage Results / Accessing Coverage Data from the Results Explorer"
+        },
+        {
+          "key": "76b36134-df19-5a2a-a489-8b42d2cd5889",
+          "document_sha256": "5098fb171a887280e319aa6b7d4cb3817a0e2ee85bbda58ba1fa7bc945db20f6",
+          "document_title": "MathWorks Simulink Coverage User Guide R2024a",
+          "ordinal": 90,
+          "content_sha256": "f1e79b6785ca69f6d6bcde76d5ce4dcde265b79343fabfd184a50bb223bc7929",
+          "page": 77,
+          "heading_path": "Setting Coverage Options / Cumulative Coverage Analysis"
+        },
+        {
+          "key": "e26fd8f4-770a-5f26-b8c5-a20c3a6d63d6",
+          "document_sha256": "5098fb171a887280e319aa6b7d4cb3817a0e2ee85bbda58ba1fa7bc945db20f6",
+          "document_title": "MathWorks Simulink Coverage User Guide R2024a",
+          "ordinal": 91,
+          "content_sha256": "8ae2cd3a4ae77d3ee4d6f07f1c9ccfce13308b96d356d55246f82274379f2be9",
+          "page": 78,
+          "heading_path": "Setting Coverage Options / Cumulative Coverage Analysis"
+        },
+        {
+          "key": "120a61c9-9414-5499-bd9f-494e3fc7ed5f",
+          "document_sha256": "5098fb171a887280e319aa6b7d4cb3817a0e2ee85bbda58ba1fa7bc945db20f6",
+          "document_title": "MathWorks Simulink Coverage User Guide R2024a",
+          "ordinal": 338,
+          "content_sha256": "bb7e7fc390d6d8ef11329b24b19703dad0b592d19a0520c6cad8bd8988a12673",
+          "page": 324,
+          "heading_path": "Results Review / Top-Level Model Coverage Report / Cumulative Coverage"
+        }
+      ],
+      "gold_migration": "stable_ref_verified_after_document_reindex"
+    },
+    {
+      "id": "V3-COV-02",
+      "domain": "coverage",
+      "type": "scenario",
+      "query_style": "模型层级",
+      "question": "引用模型或可复用子系统出现多个实例时，覆盖率结果按实例还是聚合查看，有哪些限制？",
+      "expected_mode": "rag",
+      "expected_docs": [
+        "MathWorks Simulink Coverage User Guide R2024a"
+      ],
+      "expected_sections": [
+        "Model Coverage for Multiple Instances of a Referenced Model"
+      ],
+      "must_cover": [
+        "实例与聚合边界准确，不把一种配置说成唯一行为。"
+      ],
+      "forbidden": [
+        "实例与聚合边界准确，不把一种配置说成唯一行为。"
+      ],
+      "gold_evidence": [
+        3189,
+        3318,
+        3320,
+        3322,
+        3323
+      ],
+      "gold_status": "annotated_source",
+      "gold_notes": "Source-first annotation from immutable evidence chunks: E:3189, E:3318, E:3320, E:3322, E:3323.",
+      "review_status": "keep",
+      "legacy_gold_evidence": [
+        3189,
+        3318,
+        3320,
+        3322,
+        3323
+      ],
+      "gold_evidence_refs": [
+        {
+          "key": "46e557a4-260f-54a0-9404-f5b2342376eb",
+          "document_sha256": "5098fb171a887280e319aa6b7d4cb3817a0e2ee85bbda58ba1fa7bc945db20f6",
+          "document_title": "MathWorks Simulink Coverage User Guide R2024a",
+          "ordinal": 53,
+          "content_sha256": "a6de46b1124ddaecc4b36e7efd9a4efbfeff6df217ec2d78496505e38ff02445",
+          "page": 42,
+          "heading_path": "Model Objects That Receive Model Coverage / Model Objects That Receive Coverage / Model"
+        },
+        {
+          "key": "05c7e00d-2b3d-5a53-9ecd-9274ed5babd0",
+          "document_sha256": "5098fb171a887280e319aa6b7d4cb3817a0e2ee85bbda58ba1fa7bc945db20f6",
+          "document_title": "MathWorks Simulink Coverage User Guide R2024a",
+          "ordinal": 182,
+          "content_sha256": "ca9b7b610056052ca7ed644eb43cc61d4c771b0a4c55db008743b922ba3c9c80",
+          "page": 168,
+          "heading_path": "Coverage Collection During Simulation / Model Coverage for Multiple Instances of a Referenced Model / Record Coverage for Multiple Instances of a Referenced Model"
+        },
+        {
+          "key": "0bee8e03-9d30-5434-b4a9-cad30e78a5a3",
+          "document_sha256": "5098fb171a887280e319aa6b7d4cb3817a0e2ee85bbda58ba1fa7bc945db20f6",
+          "document_title": "MathWorks Simulink Coverage User Guide R2024a",
+          "ordinal": 184,
+          "content_sha256": "3bbea73ee6ea671a1f5c81daf92baef44645f96c3eabe768298e1cbac2403b49",
+          "page": 170,
+          "heading_path": "Coverage Collection During Simulation / Model Coverage for Multiple Instances of a Referenced Model / Record Coverage for Multiple Instances of a Referenced Model"
+        },
+        {
+          "key": "a228d7ed-1769-583a-ba4e-88878c1a0d5b",
+          "document_sha256": "5098fb171a887280e319aa6b7d4cb3817a0e2ee85bbda58ba1fa7bc945db20f6",
+          "document_title": "MathWorks Simulink Coverage User Guide R2024a",
+          "ordinal": 186,
+          "content_sha256": "7ccc9507ebe13f5352bf60995260d2a2fd1344f3f1ca827545c54d604e01a71f",
+          "page": 172,
+          "heading_path": "Coverage Collection During Simulation / Model Coverage for Multiple Instances of a Referenced Model / Record Coverage for Multiple Instances of a Referenced Model"
+        },
+        {
+          "key": "4b38adb0-5c61-5336-ad22-d0714006c8b5",
+          "document_sha256": "5098fb171a887280e319aa6b7d4cb3817a0e2ee85bbda58ba1fa7bc945db20f6",
+          "document_title": "MathWorks Simulink Coverage User Guide R2024a",
+          "ordinal": 187,
+          "content_sha256": "154bfc89b41add1d70421076bc8800d43a4ad6373276e48d88f8f2478d079ea2",
+          "page": 173,
+          "heading_path": "Coverage Collection During Simulation / Model Coverage for Multiple Instances of a Referenced Model / Record Coverage for Multiple Instances of a Referenced Model"
+        }
+      ],
+      "gold_migration": "stable_ref_verified_after_document_reindex"
+    },
+    {
+      "id": "V3-COV-03",
+      "domain": "coverage",
+      "type": "scenario",
+      "query_style": "变体场景",
+      "question": "模型含有未激活 Variant 时，覆盖结果为什么可能看不到这些分支，相关选项怎样影响报告？",
+      "expected_mode": "rag",
+      "expected_docs": [
+        "MathWorks Simulink Coverage User Guide R2024a"
+      ],
+      "expected_sections": [
+        "Filter Inactive Variant Configurations"
+      ],
+      "must_cover": [
+        "解释 inactive variant 过滤及适用条件。"
+      ],
+      "forbidden": [
+        "不得超出原始证据或把限定条件泛化。"
+      ],
+      "gold_evidence": [
+        3210,
+        3426
+      ],
+      "gold_status": "annotated_source",
+      "gold_notes": "Source-first annotation from immutable evidence chunks: E:3210, E:3426.",
+      "review_status": "keep",
+      "legacy_gold_evidence": [
+        3210,
+        3426
+      ],
+      "gold_evidence_refs": [
+        {
+          "key": "3e6b1437-1e5a-569a-be64-135d34d5c2d5",
+          "document_sha256": "5098fb171a887280e319aa6b7d4cb3817a0e2ee85bbda58ba1fa7bc945db20f6",
+          "document_title": "MathWorks Simulink Coverage User Guide R2024a",
+          "ordinal": 74,
+          "content_sha256": "a5b876b8315c00d5491d0e97e558ab58a579742b4ab34e3b41c15887d41b8bc0",
+          "page": 62,
+          "heading_path": "Setting Coverage Options / Access, Manage, and Aggregate Coverage Results / Accessing Coverage Data from the Results Explorer"
+        },
+        {
+          "key": "d119716e-67c9-52ed-aec2-e3c1613214de",
+          "document_sha256": "5098fb171a887280e319aa6b7d4cb3817a0e2ee85bbda58ba1fa7bc945db20f6",
+          "document_title": "MathWorks Simulink Coverage User Guide R2024a",
+          "ordinal": 290,
+          "content_sha256": "9b9afaea3ba9d85aeab4f4583cd98bf5054db5ad3988e7cbadebbf76bffc7c1a",
+          "page": 276,
+          "heading_path": "Coverage Collection During Simulation / Model Coverage for Variant Blocks / Customizing the Coverage Report for Models that Contain Variants"
+        }
+      ],
+      "gold_migration": "stable_ref_verified_after_document_reindex"
+    },
+    {
+      "id": "V3-COV-04",
+      "domain": "coverage",
+      "type": "procedure",
+      "query_style": "口语输出",
+      "question": "覆盖率跑完了，我想先在模型上看高亮，再导出完整报告，应该分别看哪里？",
+      "expected_mode": "rag",
+      "expected_docs": [
+        "MathWorks Simulink Coverage User Guide R2024a"
+      ],
+      "expected_sections": [
+        "View Coverage Results in Simulink Canvas",
+        "Types of Coverage Reports"
+      ],
+      "must_cover": [
+        "模型高亮和完整报告是不同输出；不得强制 Test Manager。"
+      ],
+      "forbidden": [
+        "模型高亮和完整报告是不同输出；不得强制 Test Manager。"
+      ],
+      "gold_evidence": [
+        3287,
+        3448,
+        3505
+      ],
+      "gold_status": "annotated_source",
+      "gold_notes": "Source-first annotation from immutable evidence chunks: E:3287, E:3448, E:3505.",
+      "review_status": "keep",
+      "legacy_gold_evidence": [
+        3287,
+        3448,
+        3505
+      ],
+      "gold_evidence_refs": [
+        {
+          "key": "9cf2845f-ad71-5721-8ee2-39169e9c7015",
+          "document_sha256": "5098fb171a887280e319aa6b7d4cb3817a0e2ee85bbda58ba1fa7bc945db20f6",
+          "document_title": "MathWorks Simulink Coverage User Guide R2024a",
+          "ordinal": 151,
+          "content_sha256": "21435dc10e576de4a251f13dfda70511cb1ca29ebc9f284230d6580efb6938f8",
+          "page": 137,
+          "heading_path": "Coverage Collection During Simulation / Generate Coverage Results for Models / Analyze Coverage Programmatically"
+        },
+        {
+          "key": "ecc97ada-c6de-50fe-8a3d-6277a1377193",
+          "document_sha256": "5098fb171a887280e319aa6b7d4cb3817a0e2ee85bbda58ba1fa7bc945db20f6",
+          "document_title": "MathWorks Simulink Coverage User Guide R2024a",
+          "ordinal": 312,
+          "content_sha256": "4c2f055969c9196012df351a706615a9aca91696cc12bb4c2ad64ff3448a50f3",
+          "page": 298,
+          "heading_path": "Results Review / Types of Coverage Reports"
+        },
+        {
+          "key": "5c1595ec-0061-5dd7-b650-0fdbc48fd6cc",
+          "document_sha256": "5098fb171a887280e319aa6b7d4cb3817a0e2ee85bbda58ba1fa7bc945db20f6",
+          "document_title": "MathWorks Simulink Coverage User Guide R2024a",
+          "ordinal": 369,
+          "content_sha256": "270a1239cd7a8a1496b0ead28cf5b49a8d0ce19dfbb47d8dbc259dd60463abc4",
+          "page": 355,
+          "heading_path": "Results Review / Export Model Coverage Web View"
+        }
+      ],
+      "gold_migration": "stable_ref_verified_after_document_reindex"
+    },
+    {
+      "id": "V3-COV-05",
+      "domain": "coverage",
+      "type": "boundary",
+      "query_style": "结论边界",
+      "question": "一个模型显示 100% MCDC，能否只凭这个结果断言整个项目已经满足全部安全认证要求？",
+      "expected_mode": "refusal",
+      "expected_docs": [],
+      "expected_sections": [],
+      "must_cover": [
+        "必须否定充分性；不编造认证结论，可说明还需要过程、需求、工具与其他证据。"
+      ],
+      "forbidden": [
+        "必须否定充分性；不编造认证结论，可说明还需要过程、需求、工具与其他证据。"
+      ],
+      "gold_evidence": [],
+      "gold_status": "not_applicable",
+      "gold_notes": "边界题不绑定证据块；需要识别知识范围或私有运行材料缺失。",
+      "review_status": "keep",
+      "legacy_gold_evidence": [],
+      "gold_evidence_refs": []
+    },
+    {
+      "id": "V3-X-01",
+      "domain": "cross_domain",
+      "type": "relationship",
+      "query_style": "Requirements × Test × Coverage",
+      "question": "从需求链接到测试用例，再到覆盖率结果，三者可以形成怎样的可追踪链条？",
+      "expected_mode": "rag",
+      "expected_docs": [
+        "MathWorks Simulink Test User Guide R2025a",
+        "MathWorks Simulink Coverage User Guide R2024a"
+      ],
+      "expected_sections": [
+        "Link Test Cases to Requirements",
+        "Trace Coverage Results to Requirements"
+      ],
+      "must_cover": [
+        "三层关系与工具许可边界；不能把覆盖率等同需求通过。"
+      ],
+      "forbidden": [
+        "三层关系与工具许可边界；不能把覆盖率等同需求通过。"
+      ],
+      "gold_evidence": [
+        2453,
+        2454,
+        2460,
+        2461,
+        3330,
+        3332
+      ],
+      "gold_status": "annotated_source",
+      "gold_notes": "Source-first annotation from immutable evidence chunks: E:2453, E:2454, E:2460, E:2461, E:3330, E:3332.",
+      "review_status": "keep",
+      "legacy_gold_evidence": [
+        2453,
+        2454,
+        2460,
+        2461,
+        3330,
+        3332
+      ],
+      "gold_evidence_refs": [
+        {
+          "key": "f6c49fac-3744-5971-831a-8e8601cea342",
+          "document_sha256": "fc91b8460c100507a5f7893c6135874b0737315495b1d1d5ac704d09100462ae",
+          "document_title": "MathWorks Simulink Test User Guide R2025a",
+          "ordinal": 23,
+          "content_sha256": "87deacccdd7b8a3950469ffbfd1208d22e54ac08e922ee48291791cb6608a017",
+          "page": 18,
+          "heading_path": "Test Strategies / Link to Requirements / Establish Requirements Traceability for Testing"
+        },
+        {
+          "key": "ce57a2d3-0306-5201-bc86-404c3c8a6717",
+          "document_sha256": "fc91b8460c100507a5f7893c6135874b0737315495b1d1d5ac704d09100462ae",
+          "document_title": "MathWorks Simulink Test User Guide R2025a",
+          "ordinal": 24,
+          "content_sha256": "dbd0174a7793132fef9ddfd1637fd223b43f00d14c42553b82133ca8d3090b77",
+          "page": 19,
+          "heading_path": "Test Strategies / Link to Requirements / Establish Requirements Traceability for Testing"
+        },
+        {
+          "key": "4becacac-c81e-5fde-a2bc-002fd21c7146",
+          "document_sha256": "fc91b8460c100507a5f7893c6135874b0737315495b1d1d5ac704d09100462ae",
+          "document_title": "MathWorks Simulink Test User Guide R2025a",
+          "ordinal": 30,
+          "content_sha256": "3c1eae39411be32a0f51f1a53ebbd6084fd204d4f9302034a1d4db2ae9ece071",
+          "page": 25,
+          "heading_path": "Test Strategies / Requirements-Based Testing for Model Development"
+        },
+        {
+          "key": "8d661985-55fd-585c-b552-9bdfebeb3c1c",
+          "document_sha256": "fc91b8460c100507a5f7893c6135874b0737315495b1d1d5ac704d09100462ae",
+          "document_title": "MathWorks Simulink Test User Guide R2025a",
+          "ordinal": 31,
+          "content_sha256": "39b2b3bf54240f9eb8fda54c099de1829da6ce12f34a72d1d2387b10cfe78e3b",
+          "page": 26,
+          "heading_path": "Test Strategies / Requirements-Based Testing for Model Development"
+        },
+        {
+          "key": "ce739298-b5f8-5618-930c-7e03dfc8d945",
+          "document_sha256": "5098fb171a887280e319aa6b7d4cb3817a0e2ee85bbda58ba1fa7bc945db20f6",
+          "document_title": "MathWorks Simulink Coverage User Guide R2024a",
+          "ordinal": 194,
+          "content_sha256": "536db21ca54192e44a40752323d3ec5ec8c3679800f850d24dd0e55b3df14e8d",
+          "page": 180,
+          "heading_path": "Coverage Collection During Simulation / Trace Coverage Results to Requirements / Prerequisites for Tracing Requirements Links"
+        },
+        {
+          "key": "4f55bf69-7487-5644-9a74-58bf347d6cd2",
+          "document_sha256": "5098fb171a887280e319aa6b7d4cb3817a0e2ee85bbda58ba1fa7bc945db20f6",
+          "document_title": "MathWorks Simulink Coverage User Guide R2024a",
+          "ordinal": 196,
+          "content_sha256": "d7b13009e93e69e37604d65b38ca5c266bfda14c6d3bd63056e1c34316254c67",
+          "page": 182,
+          "heading_path": "Coverage Collection During Simulation / Trace Coverage Results to Requirements / Prerequisites for Tracing Requirements Links"
+        }
+      ],
+      "gold_migration": "stable_ref_verified_after_document_reindex"
+    },
+    {
+      "id": "V3-X-02",
+      "domain": "cross_domain",
+      "type": "relationship",
+      "query_style": "Stateflow × Test",
+      "question": "一个含 Stateflow chart 的组件放入 test harness 后，测试输入、chart 执行和结果评估之间是什么关系？",
+      "expected_mode": "rag",
+      "expected_docs": [
+        "MathWorks Stateflow User Guide",
+        "MathWorks Simulink Test User Guide R2025a"
+      ],
+      "expected_sections": [
+        "How Stateflow Objects Interact During Execution",
+        "Test Harness Construction",
+        "Test Assessments"
+      ],
+      "must_cover": [
+        "只回答文档共同支持的集成关系，避免推断具体 chart 行为。"
+      ],
+      "forbidden": [
+        "不得超出原始证据或把限定条件泛化。"
+      ],
+      "gold_evidence": [
+        1077,
+        1078,
+        2472,
+        2544,
+        2558
+      ],
+      "gold_status": "annotated_source",
+      "gold_notes": "Source-first annotation from immutable evidence chunks: E:1077, E:1078, E:2472, E:2544, E:2558.",
+      "review_status": "keep",
+      "legacy_gold_evidence": [
+        1077,
+        1078,
+        2472,
+        2544,
+        2558
+      ],
+      "gold_evidence_refs": [
+        {
+          "key": "7a91c2b9-67f0-5cdb-82bd-6d2a6d4a7f64",
+          "document_sha256": "d0943146b9feac431291326050da1cce296d1df98adf26dfde52c173a37d3afa",
+          "document_title": "MathWorks Stateflow User Guide",
+          "ordinal": 53,
+          "content_sha256": "e6f5615921919ecc175edf47ed2857490f3fa49cd6e9c6529fed3fe67154da0e",
+          "page": 41,
+          "heading_path": "Stateflow Chart Programming / How Stateflow Objects Interact During Execution"
+        },
+        {
+          "key": "e3ffbf09-8146-5ae6-989b-b4f0bbeae735",
+          "document_sha256": "d0943146b9feac431291326050da1cce296d1df98adf26dfde52c173a37d3afa",
+          "document_title": "MathWorks Stateflow User Guide",
+          "ordinal": 54,
+          "content_sha256": "5896fac11cfb44021d1ec9a6c5924ed16359d98f70a2a722cb2a16a208cdfab4",
+          "page": 42,
+          "heading_path": "Stateflow Chart Programming / How Stateflow Objects Interact During Execution"
+        },
+        {
+          "key": "3611ea2d-8d4b-5739-8d16-1ab34b588b5a",
+          "document_sha256": "fc91b8460c100507a5f7893c6135874b0737315495b1d1d5ac704d09100462ae",
+          "document_title": "MathWorks Simulink Test User Guide R2025a",
+          "ordinal": 42,
+          "content_sha256": "ac80ed4c0f4791605f2a218f1e439457b8c830c1469e1a3be99051d9a3b60055",
+          "page": 38,
+          "heading_path": "Test Harness / Test Harness Construction for Specific Model Elements / Function Calls"
+        },
+        {
+          "key": "5f5667a7-9c31-555e-b71d-29ad841fd02e",
+          "document_sha256": "fc91b8460c100507a5f7893c6135874b0737315495b1d1d5ac704d09100462ae",
+          "document_title": "MathWorks Simulink Test User Guide R2025a",
+          "ordinal": 114,
+          "content_sha256": "a925035dc1e9277ad18055fed26944add46359c6c4b8cc594d3fae957df69d92",
+          "page": 110,
+          "heading_path": "Test Sequences and Assessments / Test Sequence Basics / Transition Types"
+        },
+        {
+          "key": "7722ea35-8b8c-5a59-b5da-f8d818b03dca",
+          "document_sha256": "fc91b8460c100507a5f7893c6135874b0737315495b1d1d5ac704d09100462ae",
+          "document_title": "MathWorks Simulink Test User Guide R2025a",
+          "ordinal": 128,
+          "content_sha256": "734f193768f6a2a0b12ef70cc825b635cc56a6bfd21f99449bf40461b176942d",
+          "page": 124,
+          "heading_path": "Test Sequences and Assessments / Verify Model Simulation by Using when Decomposition / Activate verify Statements by Using Signal Conditions"
+        }
+      ],
+      "gold_migration": "stable_ref_verified_after_document_reindex"
+    },
+    {
+      "id": "V3-X-03",
+      "domain": "cross_domain",
+      "type": "relationship",
+      "query_style": "AUTOSAR × Test",
+      "question": "导入的 AUTOSAR 组件模型能否直接放进 test harness 做 MIL 测试，还需要关注哪些接口或映射条件？",
+      "expected_mode": "rag",
+      "expected_docs": [
+        "AUTOSAR Blockset User Guide R2024a",
+        "MathWorks Simulink Test User Guide R2025a"
+      ],
+      "expected_sections": [
+        "Import AUTOSAR XML Descriptions",
+        "Test Harness Construction"
+      ],
+      "must_cover": [
+        "允许条件式回答；不能声称导入后无需配置即可测试。"
+      ],
+      "forbidden": [
+        "允许条件式回答；不能声称导入后无需配置即可测试。"
+      ],
+      "gold_evidence": [
+        3700,
+        3704,
+        3764,
+        2472
+      ],
+      "gold_status": "annotated_source",
+      "gold_notes": "Source-first annotation from immutable evidence chunks: E:210, E:214, E:274, E:2472.",
+      "review_status": "keep",
+      "legacy_gold_evidence": [
+        210,
+        214,
+        274,
+        2472
+      ],
+      "gold_evidence_refs": [
+        {
+          "key": "1f35e744-fb58-5ddb-96b5-aab1362ede9e",
+          "document_sha256": "4f064ba67ff0da513841c45d0f7969c067505df223a0bc44ede2bba9ad7bb54b",
+          "document_title": "AUTOSAR Blockset User Guide R2024a",
+          "ordinal": 93,
+          "content_sha256": "9dd8f82d5d2d696efc1fd89d396d3900ca78dd4d5a4800bc9654ba35e7d8307e",
+          "page": 89,
+          "heading_path": "Modeling Patterns for AUTOSAR Components / Model AUTOSAR Communication / Sender-Receiver Interface"
+        },
+        {
+          "key": "6bbb8b6a-b288-564c-8dcf-ad038a7d9e90",
+          "document_sha256": "4f064ba67ff0da513841c45d0f7969c067505df223a0bc44ede2bba9ad7bb54b",
+          "document_title": "AUTOSAR Blockset User Guide R2024a",
+          "ordinal": 97,
+          "content_sha256": "054790bbd1e15360a524b18872fff4b45f81bd7a511516d6ada24c7d55eac175",
+          "page": 93,
+          "heading_path": "Modeling Patterns for AUTOSAR Components / Model AUTOSAR Communication / Mode-Switch Interface"
+        },
+        {
+          "key": "17fc5e50-d7aa-563f-80a5-2d9ceede572d",
+          "document_sha256": "4f064ba67ff0da513841c45d0f7969c067505df223a0bc44ede2bba9ad7bb54b",
+          "document_title": "AUTOSAR Blockset User Guide R2024a",
+          "ordinal": 157,
+          "content_sha256": "a67581efcd003c2cd2ef8447a97054580480581325149d7e8a9ed8cf4973952d",
+          "page": 143,
+          "heading_path": "AUTOSAR Component Creation / Import AUTOSAR Component to Simulink"
+        },
+        {
+          "key": "3611ea2d-8d4b-5739-8d16-1ab34b588b5a",
+          "document_sha256": "fc91b8460c100507a5f7893c6135874b0737315495b1d1d5ac704d09100462ae",
+          "document_title": "MathWorks Simulink Test User Guide R2025a",
+          "ordinal": 42,
+          "content_sha256": "ac80ed4c0f4791605f2a218f1e439457b8c830c1469e1a3be99051d9a3b60055",
+          "page": 38,
+          "heading_path": "Test Harness / Test Harness Construction for Specific Model Elements / Function Calls"
+        }
+      ],
+      "gold_migration": "stable_ref_verified_after_document_reindex"
+    },
+    {
+      "id": "V3-X-04",
+      "domain": "cross_domain",
+      "type": "relationship",
+      "query_style": "SIL/PIL × Coverage",
+      "question": "Normal、SIL、PIL 测试和模型覆盖率、代码覆盖率之间是什么关系，哪些结果不能混着解释？",
+      "expected_mode": "rag",
+      "expected_docs": [
+        "MathWorks Simulink Test User Guide R2025a",
+        "MathWorks Simulink Coverage User Guide R2024a"
+      ],
+      "expected_sections": [
+        "Back-to-Back Equivalence Testing",
+        "Model Objects That Receive Coverage"
+      ],
+      "must_cover": [
+        "明确模型覆盖与代码覆盖、不同执行模式；禁止把 SIL 说成模型覆盖的必要条件。"
+      ],
+      "forbidden": [
+        "明确模型覆盖与代码覆盖、不同执行模式；禁止把 SIL 说成模型覆盖的必要条件。"
+      ],
+      "gold_evidence": [
+        2743,
+        3189,
+        3318
+      ],
+      "gold_status": "annotated_source",
+      "gold_notes": "Source-first annotation from immutable evidence chunks: E:2743, E:3189, E:3318.",
+      "review_status": "keep",
+      "legacy_gold_evidence": [
+        2743,
+        3189,
+        3318
+      ],
+      "gold_evidence_refs": [
+        {
+          "key": "53202090-7ce7-551f-8473-6b049414c38c",
+          "document_sha256": "fc91b8460c100507a5f7893c6135874b0737315495b1d1d5ac704d09100462ae",
+          "document_title": "MathWorks Simulink Test User Guide R2025a",
+          "ordinal": 313,
+          "content_sha256": "75954e491cf1a63278302381d397050223c7d212c7355b21c515cf7b0a771541",
+          "page": 308,
+          "heading_path": "Test Manager Test Cases / Back-to-Back Equivalence Testing"
+        },
+        {
+          "key": "46e557a4-260f-54a0-9404-f5b2342376eb",
+          "document_sha256": "5098fb171a887280e319aa6b7d4cb3817a0e2ee85bbda58ba1fa7bc945db20f6",
+          "document_title": "MathWorks Simulink Coverage User Guide R2024a",
+          "ordinal": 53,
+          "content_sha256": "a6de46b1124ddaecc4b36e7efd9a4efbfeff6df217ec2d78496505e38ff02445",
+          "page": 42,
+          "heading_path": "Model Objects That Receive Model Coverage / Model Objects That Receive Coverage / Model"
+        },
+        {
+          "key": "05c7e00d-2b3d-5a53-9ecd-9274ed5babd0",
+          "document_sha256": "5098fb171a887280e319aa6b7d4cb3817a0e2ee85bbda58ba1fa7bc945db20f6",
+          "document_title": "MathWorks Simulink Coverage User Guide R2024a",
+          "ordinal": 182,
+          "content_sha256": "ca9b7b610056052ca7ed644eb43cc61d4c771b0a4c55db008743b922ba3c9c80",
+          "page": 168,
+          "heading_path": "Coverage Collection During Simulation / Model Coverage for Multiple Instances of a Referenced Model / Record Coverage for Multiple Instances of a Referenced Model"
+        }
+      ],
+      "gold_migration": "stable_ref_verified_after_document_reindex"
+    },
+    {
+      "id": "V3-X-05",
+      "domain": "cross_domain",
+      "type": "boundary",
+      "query_style": "完全库外",
+      "question": "现有资料能不能告诉我 ROS 2 节点在某个私有机器人项目里的 DDS 丢包根因？",
+      "expected_mode": "refusal",
+      "expected_docs": [],
+      "expected_sections": [],
+      "must_cover": [
+        "识别知识库与私有运行材料双重缺失，不用 Simulink 通用资料猜测。"
+      ],
+      "forbidden": [
+        "识别知识库与私有运行材料双重缺失，不用 Simulink 通用资料猜测。"
+      ],
+      "gold_evidence": [],
+      "gold_status": "not_applicable",
+      "gold_notes": "边界题不绑定证据块；需要识别知识范围或私有运行材料缺失。",
+      "review_status": "keep",
+      "legacy_gold_evidence": [],
+      "gold_evidence_refs": []
+    }
+  ],
+  "derived_from": {
+    "file": "docs/evaluation/EVAL_REGRESSION_V3.json",
+    "sha256": "bded80c0c594d73c0d9b763397e31f7648d24b11a884fdbeb6a22e9b161f94e7",
+    "version": "3.0"
+  },
+  "evidence_reference_policy": "qdrant_uuid_plus_document_sha_ordinal_content_hash"
+}

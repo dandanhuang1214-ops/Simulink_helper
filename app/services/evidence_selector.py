@@ -454,6 +454,7 @@ def select_evidence(
             ),
             key=lambda item: (
                 item.get("aspect_scores", {}).get(aspect.name, 0.0),
+                -len(set(item.get("document_domains") or []) - primary_domains),
                 bool(set(item.get("channels") or []) & {"bm25", "dense"}),
                 item.get("selector_score", 0.0),
             ),
@@ -472,6 +473,8 @@ def select_evidence(
     # win over generic procedure wording from adjacent products.
     if role == "procedure":
         for stage in requested_procedure_stages:
+            if any(_procedure_stage(item) == stage for item in selected):
+                continue
             stage_item = max(
                 (item for item in eligible if item not in selected and _procedure_stage(item) == stage),
                 key=lambda item: (

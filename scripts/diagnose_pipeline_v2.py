@@ -165,14 +165,14 @@ async def diagnose_case(case: dict, connection: sqlite3.Connection, profile: str
     }
 
 
-def render(rows: list[dict], database_stats: dict, profile: str) -> str:
+def render(rows: list[dict], database_stats: dict, profile: str, dataset_version: str) -> str:
     categories = Counter(row["category"] for row in rows)
     fragmentation = sum(row["fragmentation_risk"] for row in rows)
     lines = [
-        "# Pipeline Diagnosis v2",
+        f"# Pipeline Diagnosis {dataset_version}",
         "",
         f"- Retrieval profile: `{profile}`",
-        "- Dataset: v2 development set only; v3 holdout was not used.",
+        f"- Dataset: `{dataset_version}` (`{len(rows)}` RAG cases).",
         "- No Top-K, chunking, selector, prompt, or threshold values were changed during this run.",
         "",
         "## Classification",
@@ -245,7 +245,9 @@ async def main() -> None:
     args = parser.parse_args()
 
     payload = json.loads(args.set.read_text(encoding="utf-8"))
-    assert payload.get("status") == "frozen_v2_baseline", "diagnosis must use the v2 development set"
+    allowed_statuses = {"frozen_v2_baseline", "development_regression_v3_1"}
+    assert payload.get("status") in allowed_statuses, "unsupported evaluation dataset status"
+    dataset_version = str(payload.get("version") or payload.get("name") or "evaluation")
     cases = [case for case in payload["cases"] if case["expected_mode"] == "rag"]
     connection = sqlite3.connect(args.database)
     connection.row_factory = sqlite3.Row
@@ -265,7 +267,7 @@ async def main() -> None:
         print(json.dumps({key: row[key] for key in ("id", "category", "gold_ranks", "fragmentation_risk", "elapsed_ms")}, ensure_ascii=False), flush=True)
 
     args.output.parent.mkdir(parents=True, exist_ok=True)
-    args.output.write_text(render(rows, database_stats, args.profile), encoding="utf-8")
+    args.output.write_text(render(rows, database_stats, args.profile, dataset_version), encoding="utf-8")
     args.output.with_suffix(".json").write_text(json.dumps({"database_stats": database_stats, "rows": rows}, ensure_ascii=False, indent=2), encoding="utf-8")
     print(f"REPORT={args.output}", flush=True)
 

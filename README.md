@@ -2,6 +2,8 @@
 
 面向 Simulink 资料的本地私有 LLM-Wiki。使用 FastAPI、Next.js、SQLite、Qdrant、Ollama 和 Docker Compose。
 
+当前冻结版本：`v0.2.0-demo`。定版说明见 [`docs/DEMO_RELEASE_V0.2.0.md`](docs/DEMO_RELEASE_V0.2.0.md)。
+
 - SQLite 保存文档记录、导入任务、会话、消息和低风险偏好记忆等业务数据。
 - Qdrant 保存文档分块向量和检索元数据。
 - Ollama 运行本地对话模型与 Embedding 模型。
@@ -93,6 +95,14 @@ Web 工作台：http://localhost:13000
 - API重启或连接中断后自动收敛遗留生成状态，并保留已生成的部分答案。
 
 完整交付检查见 [`docs/DEMO_ACCEPTANCE.md`](docs/DEMO_ACCEPTANCE.md)。
+
+创建SQLite与Qdrant在线备份：
+
+```powershell
+.\scripts\backup-demo.ps1
+```
+
+跨文档Claim级知识连接已记录为进阶机制，见 [`docs/NEXT_STAGE_CLAIM_GRAPH.md`](docs/NEXT_STAGE_CLAIM_GRAPH.md)，不进入当前Demo。
 
 ## 入库规则 v1
 

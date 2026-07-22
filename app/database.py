@@ -28,6 +28,7 @@ class Document(Base):
     storage_path: Mapped[str] = mapped_column(String(2000))
     parse_mode: Mapped[str] = mapped_column(String(30), default="auto")
     status: Mapped[str] = mapped_column(String(30), default="queued", index=True)
+    enabled: Mapped[bool] = mapped_column(Boolean, default=True, index=True)
     source_url: Mapped[str | None] = mapped_column(String(2000), nullable=True)
     product: Mapped[str] = mapped_column(String(100), default="Simulink")
     release: Mapped[str | None] = mapped_column(String(50), nullable=True)
@@ -206,6 +207,17 @@ def set_sqlite_pragmas(dbapi_connection, _connection_record) -> None:
 def initialize_database() -> None:
     Base.metadata.create_all(bind=engine)
     with engine.begin() as connection:
+        if connection.dialect.name == "sqlite":
+            document_columns = {
+                str(row[1]) for row in connection.execute(text("PRAGMA table_info(kb_documents)"))
+            }
+            if "enabled" not in document_columns:
+                connection.execute(text(
+                    "ALTER TABLE kb_documents ADD COLUMN enabled BOOLEAN NOT NULL DEFAULT 1"
+                ))
+                connection.execute(text(
+                    "CREATE INDEX IF NOT EXISTS ix_kb_documents_enabled ON kb_documents (enabled)"
+                ))
         connection.execute(text("""
             CREATE VIRTUAL TABLE IF NOT EXISTS evidence_fts USING fts5(
                 chunk_id UNINDEXED, title, heading_path, content,

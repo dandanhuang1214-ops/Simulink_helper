@@ -1,0 +1,18 @@
+{
+  "evaluation_file": "docs/evaluation/EVAL_REGRESSION_V3_1.json",
+  "version": "3.1",
+  "status": "development_regression_v3_1",
+  "sha256": "926ce9686b55739edbcf07200aa19d71fc5e6659da2bb171150f0dd3402bb657",
+  "derived_from": {
+    "file": "docs/evaluation/EVAL_REGRESSION_V3.json",
+    "sha256": "bded80c0c594d73c0d9b763397e31f7648d24b11a884fdbeb6a22e9b161f94e7"
+  },
+  "cases": 30,
+  "rag_cases": 24,
+  "refusal_cases": 6,
+  "gold_references": 89,
+  "unique_stable_keys": 76,
+  "reference_policy": "qdrant_uuid_plus_document_sha_ordinal_content_hash",
+  "usage_policy": "repeatable development regression; not an unseen holdout",
+  "database_validation": "passed on 2026-07-21"
+}

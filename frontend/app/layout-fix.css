@@ -1097,6 +1097,56 @@
   font-size: 10px;
 }
 
+.evidence-chain {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 7px;
+  margin: 10px 0 12px;
+}
+
+.evidence-chain button {
+  min-width: 0;
+  border: 1px solid #dbe4f1;
+  border-radius: 10px;
+  background: #f7f9fc;
+  color: #40516b;
+  padding: 8px;
+  display: grid;
+  gap: 2px;
+  text-align: left;
+}
+
+.evidence-chain button:last-child {
+  text-align: right;
+}
+
+.evidence-chain button:hover:not(:disabled) {
+  border-color: #9bb9f5;
+  background: #edf3ff;
+}
+
+.evidence-chain button:disabled {
+  cursor: default;
+  opacity: .45;
+}
+
+.evidence-chain span,
+.evidence-chain small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.evidence-chain span {
+  color: #778399;
+  font-size: 9px;
+}
+
+.evidence-chain b {
+  color: #2563eb;
+  font-size: 10px;
+}
+
 .compose {
   z-index: 5;
   padding-top: 18px;
@@ -1695,6 +1745,11 @@
   gap: 10px;
   min-height: 220px;
   align-content: start;
+}
+
+.doc-card.doc-disabled {
+  opacity: 0.58;
+  background: #f4f6f9;
 }
 
 .doc-card-head {

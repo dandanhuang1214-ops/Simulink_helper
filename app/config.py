@@ -5,7 +5,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class Settings(BaseSettings):
     app_name: str = "Simulink Assistant"
-    app_version: str = "0.1.0"
+    app_version: str = "0.2.0"
     ollama_base_url: str = "http://ollama:11434"
     qdrant_url: str = "http://qdrant:6333"
     database_url: str = "sqlite:////app/data/app.db"
